@@ -1,0 +1,62 @@
+package choosers
+
+import (
+	"fmt"
+	"strconv"
+	"testing"
+
+	"github.com/dgryski/go-metro"
+	"github.com/rbastic/go-schemaless"
+	"github.com/rbastic/go-schemaless/choosers/chash"
+	"github.com/rbastic/go-schemaless/choosers/jump"
+	"github.com/rbastic/go-schemaless/choosers/ketama"
+	"github.com/rbastic/go-schemaless/choosers/maglev"
+	"github.com/rbastic/go-schemaless/choosers/mpc"
+	"github.com/rbastic/go-schemaless/choosers/rendezvous"
+)
+
+func benchmarkChooser(b *testing.B, shards int, ch schemaless.Chooser) {
+
+	var buckets []string
+	for i := 0; i < shards; i++ {
+		buckets = append(buckets, fmt.Sprintf("shard-%d", i))
+	}
+
+	ch.SetBuckets(buckets)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		ch.Choose(buckets[i&(shards-1)])
+	}
+}
+
+func benchmarkOne(b *testing.B, newch func() schemaless.Chooser) {
+	for _, size := range []int{8, 32, 128, 512, 2048, 8192} {
+		b.Run(strconv.Itoa(size), func(b *testing.B) { benchmarkChooser(b, size, newch()) })
+	}
+}
+
+func BenchmarkKetama(b *testing.B) { benchmarkOne(b, func() schemaless.Chooser { return ketama.New() }) }
+func BenchmarkCHash(b *testing.B)  { benchmarkOne(b, func() schemaless.Chooser { return chash.New() }) }
+func BenchmarkMulti(b *testing.B) {
+	benchmarkOne(b, func() schemaless.Chooser { return mpc.New(hash64seed, seeds, 21) })
+}
+func BenchmarkJump(b *testing.B) {
+	benchmarkOne(b, func() schemaless.Chooser { return jump.New(hash64) })
+}
+func BenchmarkRendezvous(b *testing.B) {
+	benchmarkOne(b, func() schemaless.Chooser { return rendezvous.New() })
+}
+
+// lousy seeds
+var seeds = [2]uint64{1, 2}
+
+func hash64seed(b []byte, s uint64) uint64 { return uint64(metro.Hash64(b, s)) }
+
+func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
+
+func BenchmarkMaglev8(b *testing.B)   { benchmarkChooser(b, 8, maglev.New()) }
+func BenchmarkMaglev32(b *testing.B)  { benchmarkChooser(b, 32, maglev.New()) }
+func BenchmarkMaglev128(b *testing.B) { benchmarkChooser(b, 128, maglev.New()) }
+func BenchmarkMaglev512(b *testing.B) { benchmarkChooser(b, 512, maglev.New()) }

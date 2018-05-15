@@ -1,0 +1,10 @@
+
+-----------------------------------------------------------------------------
+implement fs     - almost done, need to sort a couple things
+implement memory - DONE :)
+implement sql
+	mysql    - seems pretty easy now, we've really paved the way.
+	...
+implement ....?
+-----------------------------------------------------------------------------
+look at dgryski's rest/replica packages for some other ideas/inspiration
