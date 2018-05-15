@@ -1,6 +1,6 @@
 
-This is an open-source, MIT-licensed implementation of a sharded datastore
-inspired by Uber's Schemaless.
+This is an open-source, MIT-licensed implementation of a sharded database
+framework inspired by Uber's Schemaless.
 
 I do not work for Uber Technologies (and have not ever in the past). Everything
 has been sourced from their articles and video on the subject matter: 
