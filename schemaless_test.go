@@ -31,9 +31,12 @@ func TestShardedkv(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok := kv.GetCellLatest(k, "BASE")
+		v, ok, err := kv.GetCellLatest(k, "BASE")
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
+		}
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if string(v.Body) != "value"+strconv.Itoa(i) {
@@ -60,7 +63,10 @@ func TestShardedkv(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok := kv.GetCellLatest(k, "BASE")
+		v, ok, err := kv.GetCellLatest(k, "BASE")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
 		}
@@ -74,13 +80,19 @@ func TestShardedkv(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		t.Logf("Storing test%d BASE refKey %d value%d", i, i, i)
 		refKey := int64(i)
-		kv.PutCell("test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: []byte("value" + strconv.Itoa(i))})
+		err := kv.PutCell("test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: []byte("value" + strconv.Itoa(i))})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok := kv.GetCellLatest(k, "BASE")
+		v, ok, err := kv.GetCellLatest(k, "BASE")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if ok != true {
 			t.Errorf("failed  to get key: %s\n", k)
 		}
@@ -103,7 +115,10 @@ func TestShardedkv(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok := kv.GetCellLatest(k, "BASE")
+		v, ok, err := kv.GetCellLatest(k, "BASE")
+		if err != nil {
+			t.Fatal(err)
+		}
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
 		}

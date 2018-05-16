@@ -9,16 +9,16 @@ import (
 // Storage is a key-value storage backend
 type Storage interface {
 	// GetCell the cell designated (row key, column key, ref key)
-	GetCell(rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool)
+	GetCell(rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
 
 	// GetCellLatest returns the latest value for a given rowKey and columnKey, and a bool indicating if the key was present
-	GetCellLatest(rowKey string, columnKey string) (cell models.Cell, found bool)
+	GetCellLatest(rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
 	// GetCellsForShard returns 'limit' cells after 'location' from shard 'shard_no'
-	GetCellsForShard(shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool)
+	GetCellsForShard(shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
 
 	// PutCell inits a cell with given row key, column key, and ref key
-	PutCell(rowKey string, columnKey string, refKey int64, cell models.Cell)
+	PutCell(rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(key string) error
@@ -71,7 +71,7 @@ func New(chooser Chooser, shards []Shard) *KVStore {
 	return kv
 }
 
-func (kv *KVStore) GetCell(rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool) {
+func (kv *KVStore) GetCell(rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var storage Storage
 	var migStorage Storage
 
@@ -86,17 +86,17 @@ func (kv *KVStore) GetCell(rowKey string, columnKey string, refKey int64) (cell 
 	storage = kv.storages[shard]
 
 	if migStorage != nil {
-		val, ok := migStorage.GetCell(rowKey, columnKey, refKey)
+		val, ok, err := migStorage.GetCell(rowKey, columnKey, refKey)
 		// Fallback in migration -- TODO configurable
 		if ok {
-			return val, ok
+			return val, ok, err
 		}
 	}
 
 	return storage.GetCell(rowKey, columnKey, refKey)
 }
 
-func (kv *KVStore) GetCellLatest(rowKey string, columnKey string) (cell models.Cell, found bool) {
+func (kv *KVStore) GetCellLatest(rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
 	var storage Storage
 	var migStorage Storage
 
@@ -112,10 +112,13 @@ func (kv *KVStore) GetCellLatest(rowKey string, columnKey string) (cell models.C
 	storage = kv.storages[shard]
 
 	if migStorage != nil {
-		val, ok := migStorage.GetCellLatest(rowKey, columnKey)
-		// Fallback during migration -- TODO configurable
+		val, ok, err := migStorage.GetCellLatest(rowKey, columnKey)
+		// Fallback during migration -- TODO(rbastic): configurable
+		if err != nil {
+			return val, ok, err
+		}
 		if ok {
-			return val, ok
+			return val, ok, nil
 		}
 	}
 
@@ -123,7 +126,7 @@ func (kv *KVStore) GetCellLatest(rowKey string, columnKey string) (cell models.C
 }
 
 // PutCell
-func (kv *KVStore) PutCell(rowKey string, columnKey string, refKey int64, cell models.Cell) {
+func (kv *KVStore) PutCell(rowKey string, columnKey string, refKey int64, cell models.Cell) error {
 	var storage Storage
 
 	kv.mu.Lock()
@@ -133,14 +136,13 @@ func (kv *KVStore) PutCell(rowKey string, columnKey string, refKey int64, cell m
 		shard := kv.migration.Choose(rowKey)
 		storage = kv.mstorages[shard]
 
-		storage.PutCell(rowKey, columnKey, refKey, cell)
-		return
+		return storage.PutCell(rowKey, columnKey, refKey, cell)
 	}
 
 	shard := kv.continuum.Choose(rowKey)
 	storage = kv.storages[shard]
 
-	storage.PutCell(rowKey, columnKey, refKey, cell)
+	return storage.PutCell(rowKey, columnKey, refKey, cell)
 }
 
 // ResetConnection implements Storage.ResetConnection()
