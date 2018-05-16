@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/rbastic/go-schemaless/models/cell"
+	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
 	"sync"
 	"time"

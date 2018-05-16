@@ -2,7 +2,7 @@ package schemaless
 
 import (
 	"context"
-	"github.com/rbastic/go-schemaless/models/cell"
+	"github.com/rbastic/go-schemaless/models"
 	"sync"
 )
 

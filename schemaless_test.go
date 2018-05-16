@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	ch "github.com/rbastic/go-schemaless/choosers/chash"
-	"github.com/rbastic/go-schemaless/models/cell"
+	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/memory"
 )
 

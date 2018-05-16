@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/rbastic/go-schemaless"
-	"github.com/rbastic/go-schemaless/models/cell"
+	"github.com/rbastic/go-schemaless/models"
 )
 
 type Errstore struct{}
