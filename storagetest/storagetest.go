@@ -29,7 +29,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok)
 	}
 
-	err := storage.PutCell("hello", "BASE", 1, models.Cell{Body: []byte("wowza")})
+	err = storage.PutCell("hello", "BASE", 1, models.Cell{Body: []byte("wowza")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("failed getting a valid key: v=%v ok=%v\n", v, ok)
 	}
 
-	err := storage.ResetConnection("hello")
+	err = storage.ResetConnection("hello")
 	if err != nil {
 		t.Errorf("failed resetting connection for key: err=%v\n", err)
 	}
