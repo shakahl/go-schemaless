@@ -2,8 +2,10 @@
 This is an open-source, MIT-licensed implementation of a sharded database
 framework inspired by Uber's Schemaless.
 
-I do not work for Uber Technologies (and have not ever in the past). Everything
-has been sourced from their articles and video on the subject matter: 
+DISCLAIMER:
+
+I do not work for Uber Technologies (and haven't ever). Everything has been
+sourced from their articles and video on the subject matter: 
 
 "Taking Storage for a Ride With Uber", -- https://www.youtube.com/watch?v=Dg76cNaeB4s
 
@@ -13,4 +15,5 @@ has been sourced from their articles and video on the subject matter:
 	"Part Two", https://eng.uber.com/schemaless-part-two/ 
 	"Part Three", https://eng.uber.com/schemaless-part-three/ 
 
-The underlying sharding code is exclusively derived from github.com/dgryski/go-shardedkv
+The underlying sharding code is derived from github.com/dgryski/go-shardedkv
+
