@@ -5,7 +5,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package schemaless
+package serror
 
 import "fmt"
 
@@ -21,12 +21,12 @@ type SchemalessError struct {
 
 // Errorf is like error_ but takes Printf-style arguments to construct an error.
 // It always prefixes the message with "schemaless: ".
-func errorf(format string, args ...interface{}) {
-	error_(fmt.Errorf(prefix+format, args...))
+func Errorf(format string, args ...interface{}) {
+	Panic(fmt.Errorf(prefix+format, args...))
 }
 
 // Error wraps the argument error and uses it as the argument to panic.
-func error_(err error) {
+func Panic(err error) {
 	panic(SchemalessError{err})
 }
 

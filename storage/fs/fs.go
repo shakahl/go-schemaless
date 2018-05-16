@@ -4,9 +4,11 @@ package fs
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rbastic/go-schemaless/models/cell"
+	"github.com/rbastic/go-schemaless/serror"
 	"go.uber.org/zap"
 	"sync"
 	"time"
@@ -31,6 +33,10 @@ func exec(db *sql.DB, sqlStr string) error {
 	return nil
 }
 
+func spanic(err error) {
+	serror.Panic(err)
+}
+
 func createTable(ctx context.Context, db *sql.DB) error {
 	return exec(db, " CREATE TABLE cell ( added_at      INTEGER PRIMARY KEY AUTOINCREMENT, row_key		  VARCHAR(36) NOT NULL, column_name	  VARCHAR(64) NOT NULL, ref_key		  INTEGER NOT NULL, body		  JSON, created_at    DATETIME DEFAULT CURRENT_TIMESTAMP) ")
 }
@@ -43,22 +49,22 @@ func createIndex(ctx context.Context, db *sql.DB) error {
 func New(dir string) *Storage {
 	db, err := sql.Open(driver, dir+"/cell.db")
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 
 	err = createTable(context.TODO(), db)
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 
 	err = createIndex(context.TODO(), db)
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 
 	logger, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	s := logger.Sugar()
 
@@ -80,7 +86,7 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 	)
 	rows, err := s.store.Query("SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? ", rowKey, columnKey, refKey)
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	defer rows.Close()
 
@@ -88,7 +94,7 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 	for rows.Next() {
 		err := rows.Scan(&resAddedAt, &resRowKey, &resColName, &resRefKey, &resBody, &resCreatedAt)
 		if err != nil {
-			panic(err)
+			spanic(err)
 		}
 		s.sugar.Infow("scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
@@ -103,7 +109,7 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 
 	return cell, found
@@ -120,7 +126,7 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 	)
 	rows, err := s.store.Query("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1", rowKey, columnKey)
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	defer rows.Close()
 
@@ -128,7 +134,7 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 	for rows.Next() {
 		err := rows.Scan(&resAddedAt, &resRowKey, &resColName, &resRefKey, &resBody, &resCreatedAt)
 		if err != nil {
-			panic(err)
+			spanic(err)
 		}
 		s.sugar.Infow("scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
@@ -143,7 +149,7 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 
 	return cell, found
@@ -170,14 +176,14 @@ func (s *Storage) GetCellsForShard(shardNumber int, location string, value inter
 	case "added_at":
 		locationColumn = "added_at"
 	default:
-		panic("Unrecognized location " + location)
+		spanic(errors.New("Unrecognized location " + location))
 	}
 
 	sqlStr := fmt.Sprintf("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?", locationColumn)
 
 	rows, err := s.store.Query(sqlStr, value)
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	defer rows.Close()
 
@@ -185,7 +191,7 @@ func (s *Storage) GetCellsForShard(shardNumber int, location string, value inter
 	for rows.Next() {
 		err := rows.Scan(&resAddedAt, &resRowKey, &resColName, &resRefKey, &resBody, &resCreatedAt)
 		if err != nil {
-			panic(err)
+			spanic(err)
 		}
 		s.sugar.Infow("scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
@@ -202,7 +208,7 @@ func (s *Storage) GetCellsForShard(shardNumber int, location string, value inter
 
 	err = rows.Err()
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 
 	return cells, found
@@ -213,19 +219,19 @@ func (s *Storage) PutCell(rowKey, columnKey string, refKey int64, cell models.Ce
 	defer s.mu.Unlock()
 	stmt, err := s.store.Prepare("INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)")
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	res, err := stmt.Exec(rowKey, columnKey, refKey, cell.Body)
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	lastId, err := res.LastInsertId()
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	rowCnt, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
+		spanic(err)
 	}
 	s.sugar.Infof("ID = %d, affected = %d\n", lastId, rowCnt)
 }
