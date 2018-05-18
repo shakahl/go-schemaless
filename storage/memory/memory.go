@@ -21,6 +21,8 @@ type Storage struct {
 const (
 	driver              = "sqlite3"
 	memoryDSN           = "file::memory:"
+	createTableSQL	    = " CREATE TABLE cell ( added_at      INTEGER PRIMARY KEY AUTOINCREMENT, row_key		  VARCHAR(36) NOT NULL, column_name	  VARCHAR(64) NOT NULL, ref_key		  INTEGER NOT NULL, body		  JSON, created_at    DATETIME DEFAULT CURRENT_TIMESTAMP) "
+	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )"
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? "
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
 	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?"
@@ -36,11 +38,11 @@ func exec(db *sql.DB, sqlStr string) error {
 }
 
 func createTable(ctx context.Context, db *sql.DB) error {
-	return exec(db, " CREATE TABLE cell ( added_at      INTEGER PRIMARY KEY AUTOINCREMENT, row_key		  VARCHAR(36) NOT NULL, column_name	  VARCHAR(64) NOT NULL, ref_key		  INTEGER NOT NULL, body		  JSON, created_at    DATETIME DEFAULT CURRENT_TIMESTAMP) ")
+	return exec(db, createTableSQL)
 }
 
 func createIndex(ctx context.Context, db *sql.DB) error {
-	return exec(db, "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )")
+	return exec(db, createIndexSQL)
 }
 
 // New returns a new memory-backed Storage
@@ -83,7 +85,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
-	rows, err = s.store.Query("SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? ", rowKey, columnKey, refKey)
+	rows, err = s.store.Query(getCellSQL, rowKey, columnKey, refKey)
 	if err != nil {
 		return
 	}
@@ -124,7 +126,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
-	rows, err = s.store.Query("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1", rowKey, columnKey)
+	rows, err = s.store.Query(getCellLatestSQL, rowKey, columnKey)
 	if err != nil {
 		return
 	}
@@ -180,7 +182,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 		return
 	}
 
-	sqlStr := fmt.Sprintf("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?", locationColumn)
+	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn)
 
 	var rows *sql.Rows
 	rows, err = s.store.Query(sqlStr, value)
@@ -218,7 +220,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 
 func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
 	var stmt *sql.Stmt
-	stmt, err = s.store.Prepare("INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)")
+	stmt, err = s.store.Prepare(putCellSQL)
 	if err != nil {
 		return
 	}
