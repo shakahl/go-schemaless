@@ -1,11 +1,16 @@
 package storagetest
 
 import (
+	"context"
 	"errors"
-	"testing"
 
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
+	"testing"
+)
+
+const (
+	testString = "The shaved yak drank from the bitter well"
 )
 
 type Errstore struct{}
@@ -21,7 +26,7 @@ func (e Errstore) ResetConnection(key string) error {
 
 // StorageTest is a simple sanity check for a schemaless Storage backend
 func StorageTest(t *testing.T, storage schemaless.Storage) {
-	v, ok, err := storage.GetCell("hello", "BASE", 1)
+	v, ok, err := storage.GetCell(context.TODO(), "hello", "BASE", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,20 +34,20 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok)
 	}
 
-	err = storage.PutCell("hello", "BASE", 1, models.Cell{Body: []byte("wowza")})
+	err = storage.PutCell(context.TODO(), "hello", "BASE", 1, models.Cell{Body: []byte(testString)})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	v, ok, err = storage.GetCellLatest("hello", "BASE")
+	v, ok, err = storage.GetCellLatest(context.TODO(), "hello", "BASE")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !ok || string(v.Body) != "wowza" {
+	if !ok || string(v.Body) != testString {
 		t.Errorf("failed getting a valid key: v=%v ok=%v\n", v, ok)
 	}
 
-	err = storage.ResetConnection("hello")
+	err = storage.ResetConnection(context.TODO(), "hello")
 	if err != nil {
 		t.Errorf("failed resetting connection for key: err=%v\n", err)
 	}

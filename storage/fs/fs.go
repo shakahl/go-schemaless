@@ -9,19 +9,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
-	"sync"
 	"time"
 )
 
-// Storage is a simple memory-backed storage (RowKeyMap) with a global mutex.
+// Storage is a simple file-backed storage.
 type Storage struct {
 	store *sql.DB
-	mu    sync.Mutex
 	sugar *zap.SugaredLogger
 }
 
 const (
 	driver = "sqlite3"
+	createTableSQL = "CREATE TABLE cell ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body JSON, created_at DATETIME DEFAULT CURRENT_TIMESTAMP) "
+	createIndexSQL = "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )"
+	getCellSQL = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? "
+	getCellLatestSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?"
+	putCellSQL = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
 )
 
 func exec(db *sql.DB, sqlStr string) error {
@@ -33,16 +37,16 @@ func exec(db *sql.DB, sqlStr string) error {
 }
 
 func createTable(ctx context.Context, db *sql.DB) error {
-	return exec(db, " CREATE TABLE cell ( added_at      INTEGER PRIMARY KEY AUTOINCREMENT, row_key		  VARCHAR(36) NOT NULL, column_name	  VARCHAR(64) NOT NULL, ref_key		  INTEGER NOT NULL, body		  JSON, created_at    DATETIME DEFAULT CURRENT_TIMESTAMP) ")
+	return exec(db, createTableSQL)
 }
 
 func createIndex(ctx context.Context, db *sql.DB) error {
-	return exec(db, "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )")
+	return exec(db, createIndexSQL)
 }
 
 // New returns a new sqlite file-backed Storage
-func New(dir string) *Storage {
-	db, err := sql.Open(driver, dir+"/cell.db")
+func New(path string) *Storage {
+	db, err := sql.Open(driver, path+"_cell.db")
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +74,7 @@ func New(dir string) *Storage {
 	}
 }
 
-func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   int64
 		resRowKey    string
@@ -78,9 +82,9 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 		resRefKey    int64
 		resBody      string
 		resCreatedAt *time.Time
-		rows *sql.Rows
+		rows         *sql.Rows
 	)
-	rows, err = s.store.Query("SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? ", rowKey, columnKey, refKey)
+	rows, err = s.store.Query(getCellSQL, rowKey, columnKey, refKey)
 	if err != nil {
 		return
 	}
@@ -111,7 +115,7 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   int64
 		resRowKey    string
@@ -119,9 +123,9 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 		resRefKey    int64
 		resBody      string
 		resCreatedAt *time.Time
-		rows *sql.Rows
+		rows         *sql.Rows
 	)
-	rows, err = s.store.Query("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1", rowKey, columnKey)
+	rows, err = s.store.Query(getCellLatestSQL, rowKey, columnKey)
 	if err != nil {
 		return
 	}
@@ -152,7 +156,7 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellsForShard(shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
 		resAddedAt   int64
@@ -177,7 +181,7 @@ func (s *Storage) GetCellsForShard(shardNumber int, location string, value inter
 		return
 	}
 
-	sqlStr := fmt.Sprintf("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?", locationColumn)
+	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn)
 
 	var rows *sql.Rows
 	rows, err = s.store.Query(sqlStr, value)
@@ -213,11 +217,9 @@ func (s *Storage) GetCellsForShard(shardNumber int, location string, value inter
 	return cells, found, nil
 }
 
-func (s *Storage) PutCell(rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
 	var stmt *sql.Stmt
-	stmt, err = s.store.Prepare("INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)")
+	stmt, err = s.store.Prepare(putCellSQL)
 	if err != nil {
 		return
 	}
@@ -240,7 +242,7 @@ func (s *Storage) PutCell(rowKey, columnKey string, refKey int64, cell models.Ce
 	return
 }
 
-func (s *Storage) ResetConnection(key string) error {
+func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 	return nil
 }
 

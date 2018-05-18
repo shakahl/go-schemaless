@@ -4,8 +4,8 @@ framework inspired by Uber's Schemaless.
 
 DISCLAIMER:
 
-I do not work for Uber Technologies (and haven't ever). Everything has been
-sourced from their articles and video on the subject matter: 
+I do not work for Uber Technologies. Everything has been sourced from their
+articles and video on the subject matter (which I am extremely gracious for): 
 
 "Taking Storage for a Ride With Uber", -- https://www.youtube.com/watch?v=Dg76cNaeB4s
 
@@ -16,4 +16,6 @@ sourced from their articles and video on the subject matter:
 	"Part Three", https://eng.uber.com/schemaless-part-three/ 
 
 The underlying sharding code is derived from github.com/dgryski/go-shardedkv
+
+My sincere thanks to Damian Gryski for open-sourcing the above package.
 

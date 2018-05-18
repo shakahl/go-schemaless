@@ -43,8 +43,10 @@ type Cell struct {
 	CreatedAt  *time.Time
 }
 
-func NewCell() Cell {
-	return Cell{}
+// NewCell constructs a Cell structure with the minimum parameters necessary: a row key and column
+// name (strings), a ref key (int64), and a body ([]byte).
+func NewCell( rowKey string, columnName string, refKey int64, body []byte) Cell {
+	return Cell{ RowKey: rowKey, ColumnName: columnName, RefKey: refKey }
 }
 
 // String returns formatted JSON representing a Cell.

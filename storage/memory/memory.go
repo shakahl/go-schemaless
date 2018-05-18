@@ -9,20 +9,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
-	"sync"
 	"time"
 )
 
-// Storage is a simple memory-backed storage (RowKeyMap) with a global mutex.
+// Storage is a simple memory-backed storage (RowKeyMap).
 type Storage struct {
 	store *sql.DB
-	mu    sync.Mutex
 	sugar *zap.SugaredLogger
 }
 
 const (
 	driver    = "sqlite3"
 	memoryDSN = "file::memory:"
+	getCellSQL = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? "
+	getCellLatestSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?"
+	putCellSQL = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
 )
 
 func exec(db *sql.DB, sqlStr string) error {
@@ -71,7 +73,7 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   int64
 		resRowKey    string
@@ -79,7 +81,7 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 		resRefKey    int64
 		resBody      string
 		resCreatedAt *time.Time
-		rows *sql.Rows
+		rows         *sql.Rows
 	)
 	rows, err = s.store.Query("SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? ", rowKey, columnKey, refKey)
 	if err != nil {
@@ -112,7 +114,7 @@ func (s *Storage) GetCell(rowKey string, columnKey string, refKey int64) (cell m
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   int64
 		resRowKey    string
@@ -120,7 +122,7 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 		resRefKey    int64
 		resBody      string
 		resCreatedAt *time.Time
-		rows *sql.Rows
+		rows         *sql.Rows
 	)
 	rows, err = s.store.Query("SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1", rowKey, columnKey)
 	if err != nil {
@@ -153,7 +155,7 @@ func (s *Storage) GetCellLatest(rowKey, columnKey string) (cell models.Cell, fou
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellsForShard(shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
 		resAddedAt   int64
@@ -214,9 +216,7 @@ func (s *Storage) GetCellsForShard(shardNumber int, location string, value inter
 	return cells, found, nil
 }
 
-func (s *Storage) PutCell(rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare("INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)")
 	if err != nil {
@@ -241,10 +241,12 @@ func (s *Storage) PutCell(rowKey, columnKey string, refKey int64, cell models.Ce
 	return
 }
 
-func (s *Storage) ResetConnection(key string) error {
+// ResetConnection does not destroy the store for in-memory stores.
+func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 	return nil
 }
 
+// Destroy closes the in-memory store, and is a completely destructive operation.
 func (s *Storage) Destroy(ctx context.Context) error {
 	return s.store.Close()
 }
