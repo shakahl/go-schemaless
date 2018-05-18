@@ -7,7 +7,7 @@ DISCLAIMER:
 I do not work for Uber Technologies. Everything has been sourced from their
 articles and video on the subject matter (which I am extremely gracious for): 
 
-"Taking Storage for a Ride With Uber" -- https://www.youtube.com/watch?v=Dg76cNaeB4s
+"Taking Storage for a Ride With Uber", https://www.youtube.com/watch?v=Dg76cNaeB4s
 
 "Designing Schemaless, Uber Engineering’s Scalable Datastore Using MySQL"
 
