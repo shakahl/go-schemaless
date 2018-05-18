@@ -45,7 +45,7 @@ func newUUID() string {
 // TODO(rbastic): In the example provided by Uber, this was:
 // ... = NewSchemaless("mezzanine")
 // So a data store identifier will eventually map to
-// a Strategy that can retrieve the list of shards responsible, and a series of
+// a Strategy that can retrieve the list of shards, and a series of
 // Strategy patterns could be implemented for things like etcd, Consul, ...
 // For now, we initialize our shard-storages directly.
 

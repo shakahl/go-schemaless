@@ -30,8 +30,6 @@ func getShards(prefix string) []core.Shard {
 
 func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
 
-// Pregenerate these somehow, like with a channel+goroutine, if
-// you need a lot of them and performance has become an issue.
 func newUUID() string {
 	return uuid.Must(uuid.NewV4()).String()
 }
@@ -48,11 +46,11 @@ func main() {
 	kv := schemaless.New(shards)
 	defer kv.Destroy(context.TODO())
 
-	// We're going to demonstrate jump hash with FS-backed SQLite storage.
-	// SQLite is just to make it easy to demonstrate that the data is being
-	// split, with minimal provisioning required on the part of the user
+	// We're going to demonstrate jump hash+metro hash with FS-backed SQLite
+	// storage.  SQLite is just to make it easy to demonstrate that the data is
+	// being split, with minimal provisioning required on the part of the user
 	// (i.e. we use SQLite as it is designed to be used, for an embedded
-	// scenario,)
+	// scenario.) You can imagine each SQLite file as a separate shard.
 
 	// You decide the refKey's purpose. For example, it can
 	// be used as a record version number, or for sort-order.
