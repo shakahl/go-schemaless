@@ -2,11 +2,11 @@ package schemaless
 
 import (
 	"context"
-	"strconv"
-	"testing"
-	st "github.com/rbastic/go-schemaless/storage/memory"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
+	st "github.com/rbastic/go-schemaless/storage/memory"
+	"strconv"
+	"testing"
 )
 
 func TestShardedkv(t *testing.T) {

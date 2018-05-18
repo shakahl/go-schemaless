@@ -35,4 +35,4 @@ sqlite> select * from cell limit 10;
 9|ab729d55-9222-4f22-9b01-cc84168c3775|PII|38|{"name": "Jeremy Porter"}|2018-05-18 06:17:25
 10|fdde186d-376c-486e-912d-4d675f054d16|PII|42|{"name": "Kimberly Phillips"}|2018-05-18 06:17:25
 
-The files are sharded on the second column above -- the row key.
+The records are sharded among the "shards" on the second column above -- the row key.

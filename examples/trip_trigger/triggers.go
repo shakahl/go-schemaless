@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rbastic/go-schemaless/models"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
+	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/memory"
 
 	"github.com/satori/go.uuid"
@@ -51,7 +51,7 @@ func newUUID() string {
 
 func main() {
 	shards := getShards("trips")
-	sl := schemaless.New( shards )
+	sl := schemaless.New(shards)
 
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -128,8 +128,8 @@ func main() {
 	//sl.CallTrigger("BASE", newUUID())
 
 	rowKey := newUUID()
-	testStatus := models.NewCell( rowKey, Status, 1, []byte("{\"Test\"}"))
-	err = sl.PutCell(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus) 
+	testStatus := models.NewCell(rowKey, Status, 1, []byte("{\"Test\"}"))
+	err = sl.PutCell(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
 	if err != nil {
 		fmt.Println("Had an error:", err)
 	}

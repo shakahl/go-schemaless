@@ -2,9 +2,9 @@ package schemaless
 
 import (
 	"context"
-	"github.com/rbastic/go-schemaless/core"
-	jh "github.com/dgryski/go-shardedkv/choosers/jump"
 	"github.com/dgryski/go-metro"
+	jh "github.com/dgryski/go-shardedkv/choosers/jump"
+	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
 	"sync"
 )
@@ -34,7 +34,7 @@ type Storage interface {
 // KVStore. Flexible double-writing migration strategies could require more
 // than one being listed in this structure below.
 type DataStore struct {
-	active*core.KVStore
+	active *core.KVStore
 	// we avoid holding the lock during a call to a storage engine, which may block
 	mu sync.Mutex
 }
@@ -61,7 +61,7 @@ func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
 func New(shards []core.Shard) *DataStore {
 	chooser := jh.New(hash64)
 	kv := core.New(chooser, shards)
-	return &DataStore{active:kv}
+	return &DataStore{active: kv}
 }
 
 func (ds *DataStore) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
@@ -86,4 +86,3 @@ func (ds *DataStore) ResetConnection(ctx context.Context, key string) error {
 func (ds *DataStore) Destroy(ctx context.Context) error {
 	return ds.active.Destroy(ctx)
 }
-
