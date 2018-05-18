@@ -6,8 +6,8 @@ Records are sharded to different SQLite database files using Jump Hash +
 metrohash. You can imagine here that each file is an actual shard, or cluster
 of SQL databases. The UUIDs are generated using satori's go.uuid package.
 
-When you run 'go run main.go', you should see four user db files in the current
-folder. You can observe the following:
+When you run 'go run main.go', you should see four user db files appear in the
+current folder. You can observe the following:
 
 rbastic@marvin:~/go-src/src/github.com/rbastic/go-schemaless/examples/sqlite_users$  go run main.go
 (output snipped...)
