@@ -1,8 +1,10 @@
 This example initializes 4 shards (using the SQLite-backed fs storage, for
-testing purposes) and writes 1000 fake user records (using icrowley/fake),
-sharding them to different files using Jump Hash. You can imagine here that
-each file is an actual shard, or cluster of SQL databases. The UUIDs are
-generated using satori's go.uuid package.
+testing purposes) and writes 1000 fake user records (data generated using
+icrowley/fake),
+
+Records are sharded to different SQLite database files using Jump Hash +
+metrohash. You can imagine here that each file is an actual shard, or cluster
+of SQL databases. The UUIDs are generated using satori's go.uuid package.
 
 When you run 'go run main.go', you should see four user db files in the current
 folder. You can observe the following:
