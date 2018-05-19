@@ -13,10 +13,10 @@ import (
 const (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere? Likely.
 
-	cellID = "hello-001"
-	baseCol = "BASE"
+	cellID      = "hello-001"
+	baseCol     = "BASE"
 	otherCellID = "hello"
-	testString = "The shaved yak drank from the bitter well"
+	testString  = "The shaved yak drank from the bitter well"
 	testString2 = "The printer is on fire"
 	testString3 = "The appropriate printer-fire-response-team has been notified"
 )
@@ -32,7 +32,7 @@ func (e Errstore) ResetConnection(key string) error {
 	return errors.New("error storage ResetConnection")
 }
 
-func runPuts( t * testing.T, storage schemaless.Storage) {
+func runPuts(t *testing.T, storage schemaless.Storage) {
 	err := storage.PutCell(context.TODO(), cellID, baseCol, 1, models.Cell{Body: []byte(testString)})
 	if err != nil {
 		t.Fatal(err)
