@@ -6,6 +6,7 @@ import (
 
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
+	"github.com/satori/go.uuid"
 	"testing"
 	"time"
 )
@@ -13,12 +14,11 @@ import (
 const (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere? Likely.
 
-	cellID      = "hello-001"
 	baseCol     = "BASE"
 	otherCellID = "hello"
-	testString  = "The shaved yak drank from the bitter well"
-	testString2 = "The printer is on fire"
-	testString3 = "The appropriate printer-fire-response-team has been notified"
+	testString  = "{\"value\": \"The shaved yak drank from the bitter well\"}"
+	testString2 = "{\"value\": \"The printer is on fire\"}"
+	testString3 = "{\"value\": \"The appropriate printer-fire-response-team has been notified\"}"
 )
 
 type Errstore struct{}
@@ -32,7 +32,8 @@ func (e Errstore) ResetConnection(key string) error {
 	return errors.New("error storage ResetConnection")
 }
 
-func runPuts(t *testing.T, storage schemaless.Storage) {
+func runPuts(t *testing.T, storage schemaless.Storage) string {
+	cellID := uuid.Must(uuid.NewV4()).String()
 	err := storage.PutCell(context.TODO(), cellID, baseCol, 1, models.Cell{Body: []byte(testString)})
 	if err != nil {
 		t.Fatal(err)
@@ -47,6 +48,8 @@ func runPuts(t *testing.T, storage schemaless.Storage) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	return cellID
 }
 
 // StorageTest is a simple sanity check for a schemaless Storage backend
@@ -64,14 +67,14 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok)
 	}
 
-	runPuts(t, storage)
+	cellID := runPuts(t, storage)
 
 	v, ok, err = storage.GetCellLatest(context.TODO(), cellID, baseCol)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !ok || string(v.Body) != testString3 {
-		t.Errorf("failed getting a valid key: v=%v ok=%v\n", v, ok)
+		t.Errorf("failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok)
 	}
 
 	v, ok, err = storage.GetCell(context.TODO(), cellID, baseCol, 1)
@@ -79,7 +82,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Fatal(err)
 	}
 	if !ok || string(v.Body) != testString {
-		t.Errorf("GetCell failed when retrieving an old value: v=%v ok=%v\n", v, ok)
+		t.Errorf("GetCell failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok)
 	}
 
 	var cells []models.Cell
