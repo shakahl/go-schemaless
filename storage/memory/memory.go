@@ -21,11 +21,11 @@ type Storage struct {
 const (
 	driver              = "sqlite3"
 	memoryDSN           = "file::memory:"
-	createTableSQL	    = " CREATE TABLE cell ( added_at      INTEGER PRIMARY KEY AUTOINCREMENT, row_key		  VARCHAR(36) NOT NULL, column_name	  VARCHAR(64) NOT NULL, ref_key		  INTEGER NOT NULL, body		  JSON, created_at    DATETIME DEFAULT CURRENT_TIMESTAMP) "
+	createTableSQL      = "CREATE TABLE cell ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body JSON, created_at DATETIME DEFAULT (datetime('now','localtime')))"
 	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )"
-	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? "
+	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ?"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ? LIMIT %d"
 	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
 )
 
@@ -97,7 +97,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("GetCell scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -138,7 +138,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("GetCellLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -168,12 +168,12 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 		resCreatedAt *time.Time
 	)
 
-	// TODO: shardNumber
-
 	var locationColumn string
 
 	switch location {
 	case "timestamp":
+		fallthrough
+	case "created_at":
 		locationColumn = "created_at"
 	case "added_at":
 		locationColumn = "added_at"
@@ -182,9 +182,10 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 		return
 	}
 
-	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn)
+	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, limit)
 
 	var rows *sql.Rows
+	s.sugar.Infow("GetCellsForShard", "query", sqlStr, "value", value)
 	rows, err = s.store.Query(sqlStr, value)
 	if err != nil {
 		return
@@ -197,7 +198,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("GetCellsForShard: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt

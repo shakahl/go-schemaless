@@ -145,6 +145,28 @@ func (kv *KVStore) PutCell(ctx context.Context, rowKey string, columnKey string,
 	return storage.PutCell(ctx, rowKey, columnKey, refKey, cell)
 }
 
+func (kv *KVStore) GetCellsForShard(ctx context.Context, shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	if kv.migration != nil {
+		buckets := kv.migration.Buckets()
+		shard := buckets[shardNumber]
+		migStorage := kv.mstorages[shard]
+
+		if migStorage != nil {
+			return migStorage.GetCellsForShard(ctx, shardNumber, location, value, limit)
+		}
+	}
+
+	buckets := kv.migration.Buckets()
+	shard := buckets[shardNumber]
+	storage := kv.storages[shard]
+
+	return storage.GetCellsForShard(ctx, shardNumber, location, value, limit)
+}
+
 // ResetConnection implements Storage.ResetConnection()
 func (kv *KVStore) ResetConnection(ctx context.Context, key string) error {
 	kv.mu.Lock()

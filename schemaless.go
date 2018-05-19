@@ -72,6 +72,10 @@ func (ds *DataStore) GetCellLatest(ctx context.Context, rowKey string, columnKey
 	return ds.active.GetCellLatest(ctx, rowKey, columnKey)
 }
 
+func (ds *DataStore) GetCellsForShard(ctx context.Context, shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+	return ds.active.GetCellsForShard(ctx, shardNumber, location, value, limit)
+}
+
 // PutCell
 func (ds *DataStore) PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) error {
 	return ds.active.PutCell(ctx, rowKey, columnKey, refKey, cell)

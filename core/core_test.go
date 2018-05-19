@@ -17,6 +17,7 @@ func TestShardedkv(t *testing.T) {
 
 	for i := 0; i < nShards; i++ {
 		label := "test_shard" + strconv.Itoa(i)
+		// TODO(rbastic): AddShard isn't used here?
 		shards = append(shards, Shard{Name: label, Backend: st.New()})
 	}
 
