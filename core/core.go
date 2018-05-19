@@ -87,7 +87,6 @@ func (kv *KVStore) GetCell(ctx context.Context, rowKey string, columnKey string,
 
 	if migStorage != nil {
 		val, ok, err := migStorage.GetCell(ctx, rowKey, columnKey, refKey)
-		// Fallback in migration -- TODO configurable
 		if ok {
 			return val, ok, err
 		}
@@ -110,7 +109,6 @@ func (kv *KVStore) GetCellLatest(ctx context.Context, rowKey string, columnKey s
 
 	if migStorage != nil {
 		val, ok, err := migStorage.GetCellLatest(ctx, rowKey, columnKey)
-		// Fallback during migration -- TODO(rbastic): configurable
 		if err != nil {
 			return val, ok, err
 		}

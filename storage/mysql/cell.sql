@@ -11,4 +11,4 @@ CREATE TABLE cell
 	UNIQUE `cell_idx`(`row_key`, `column_name`, `ref_key`)
 ) ENGINE=InnoDB;
 
-
+SHOW WARNINGS;
