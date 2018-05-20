@@ -9,7 +9,7 @@ import (
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/mysql"
+	st "github.com/rbastic/go-schemaless/storage/postgres"
 	"github.com/satori/go.uuid"
 	"strconv"
 	"os"
@@ -60,7 +60,7 @@ func main() {
 	}
 
 	shards := getShards(user, pass, host, port, "user")
-	kv := schemaless.New(shards)
+	kv := schemaless.New().WithSource(shards)
 	defer kv.Destroy(context.TODO())
 
 	// We're going to demonstrate jump hash+metro hash with MySQL-backed

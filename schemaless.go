@@ -34,7 +34,8 @@ type Storage interface {
 // KVStore. Flexible double-writing migration strategies could require more
 // than one being listed in this structure below.
 type DataStore struct {
-	active *core.KVStore
+	source *core.KVStore
+	target *core.KVStore
 	// we avoid holding the lock during a call to a storage engine, which may block
 	mu sync.Mutex
 }
@@ -57,36 +58,47 @@ type Shard struct {
 
 func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
 
-// New returns a DatStore structure
-func New(shards []core.Shard) *DataStore {
+func (ds * DataStore) WithSource(shards []core.Shard) *DataStore {
 	chooser := jh.New(hash64)
 	kv := core.New(chooser, shards)
-	return &DataStore{active: kv}
+	ds.source = kv
+	return ds
+}
+
+func (ds * DataStore) WithTarget(shards []core.Shard) *DataStore {
+	chooser := jh.New(hash64)
+	kv := core.New(chooser, shards)
+	ds.target = kv
+	return ds
+}
+
+func New() *DataStore {
+	return &DataStore{}
 }
 
 func (ds *DataStore) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
-	return ds.active.GetCell(ctx, rowKey, columnKey, refKey)
+	return ds.source.GetCell(ctx, rowKey, columnKey, refKey)
 }
 
 func (ds *DataStore) GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
-	return ds.active.GetCellLatest(ctx, rowKey, columnKey)
+	return ds.source.GetCellLatest(ctx, rowKey, columnKey)
 }
 
 func (ds *DataStore) GetCellsForShard(ctx context.Context, shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
-	return ds.active.GetCellsForShard(ctx, shardNumber, location, value, limit)
+	return ds.source.GetCellsForShard(ctx, shardNumber, location, value, limit)
 }
 
 // PutCell
 func (ds *DataStore) PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) error {
-	return ds.active.PutCell(ctx, rowKey, columnKey, refKey, cell)
+	return ds.source.PutCell(ctx, rowKey, columnKey, refKey, cell)
 }
 
 // ResetConnection implements Storage.ResetConnection()
 func (ds *DataStore) ResetConnection(ctx context.Context, key string) error {
-	return ds.active.ResetConnection(ctx, key)
+	return ds.source.ResetConnection(ctx, key)
 }
 
 // Destroy implements Storage.Destroy()
 func (ds *DataStore) Destroy(ctx context.Context) error {
-	return ds.active.Destroy(ctx)
+	return ds.source.Destroy(ctx)
 }

@@ -51,7 +51,7 @@ func newUUID() string {
 
 func main() {
 	shards := getShards("trips")
-	sl := schemaless.New(shards)
+	sl := schemaless.New().WithSource(shards)
 
 	logger, err := zap.NewProduction()
 	if err != nil {
