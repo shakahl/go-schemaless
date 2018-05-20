@@ -9,6 +9,13 @@ attempt to do so here. The differences between my implementation and Uber's (as
 they have spoken or written about it) are documented throughout the code and in
 the github issues.
 
+"Why Postgres, also? I thought Uber switched away from it to MySQL."
+
+Technology changes. Life goes on. Postgres has improved, MySQL has improved.
+People have dependencies and existing requirements. Organizations might not
+want to retrain away from Postgres. The question should be more along the 
+lines of "Why not?" ... It was easy to do so. So it's been done.
+
 INSPIRATION
 
 I have been inspired by my other work on github.com/rbastic/dyndao, my time
