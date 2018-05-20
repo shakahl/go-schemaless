@@ -159,7 +159,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) GetCellsForShard(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
 		resAddedAt   int64
