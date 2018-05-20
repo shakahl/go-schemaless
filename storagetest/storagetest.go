@@ -86,7 +86,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 	}
 
 	var cells []models.Cell
-	cells, ok, err = storage.GetCellsForShard(context.TODO(), 0, "timestamp", startTime, 5)
+	cells, ok, err = storage.PartitionRead(context.TODO(), 0, "timestamp", startTime, 5)
 	if err != nil {
 		t.Fatal(err)
 	}

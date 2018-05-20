@@ -14,8 +14,8 @@ type Storage interface {
 	// GetCellLatest returns the latest value for a given rowKey and columnKey, and a bool indicating if the key was present
 	GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
-	// GetCellsForShard returns 'limit' cells after 'location' from shard 'shard_no'
-	GetCellsForShard(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
+	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
+	PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
 
 	// PutCell inits a cell with given row key, column key, and ref key
 	PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
@@ -143,7 +143,7 @@ func (kv *KVStore) PutCell(ctx context.Context, rowKey string, columnKey string,
 	return storage.PutCell(ctx, rowKey, columnKey, refKey, cell)
 }
 
-func (kv *KVStore) GetCellsForShard(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (kv *KVStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
 
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
@@ -154,7 +154,7 @@ func (kv *KVStore) GetCellsForShard(ctx context.Context, partitionNumber int, lo
 		migStorage := kv.mstorages[shard]
 
 		if migStorage != nil {
-			return migStorage.GetCellsForShard(ctx, partitionNumber, location, value, limit)
+			return migStorage.PartitionRead(ctx, partitionNumber, location, value, limit)
 		}
 	}
 
@@ -162,7 +162,7 @@ func (kv *KVStore) GetCellsForShard(ctx context.Context, partitionNumber int, lo
 	shard := buckets[partitionNumber]
 	storage := kv.storages[shard]
 
-	return storage.GetCellsForShard(ctx, partitionNumber, location, value, limit)
+	return storage.PartitionRead(ctx, partitionNumber, location, value, limit)
 }
 
 // ResetConnection implements Storage.ResetConnection()

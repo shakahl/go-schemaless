@@ -159,7 +159,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellsForShard(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
 		resAddedAt   int64
@@ -187,7 +187,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, partitionNumber int, loc
 	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, limit)
 
 	var rows *sql.Rows
-	s.sugar.Infow("GetCellsForShard", "query", sqlStr, "value", value)
+	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
 	rows, err = s.store.Query(sqlStr, value)
 	if err != nil {
 		return
@@ -200,7 +200,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, partitionNumber int, loc
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCellsForShard: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt

@@ -17,8 +17,8 @@ type Storage interface {
 	// GetCellLatest returns the latest value for a given rowKey and columnKey, and a bool indicating if the key was present
 	GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
-	// GetCellsForShard returns 'limit' cells after 'location' from shard 'shard_no'
-	GetCellsForShard(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
+	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
+	PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
 
 	// PutCell inits a cell with given row key, column key, and ref key
 	PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
@@ -84,8 +84,8 @@ func (ds *DataStore) GetCellLatest(ctx context.Context, rowKey string, columnKey
 	return ds.source.GetCellLatest(ctx, rowKey, columnKey)
 }
 
-func (ds *DataStore) GetCellsForShard(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
-	return ds.source.GetCellsForShard(ctx, partitionNumber, location, value, limit)
+func (ds *DataStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+	return ds.source.PartitionRead(ctx, partitionNumber, location, value, limit)
 }
 
 // PutCell
