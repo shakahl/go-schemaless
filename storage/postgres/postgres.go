@@ -220,9 +220,9 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	if err != nil {
 		return
 	}
-	var lastId int64
+	var lastID int64
 	/*
-	lastId, err = res.LastInsertId()
+	lastID, err = res.LastInsertId()
 	if err != nil {
 		return
 	}
@@ -233,7 +233,7 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 		return
 	}
 	// TODO(rbastic): Should we side-affect the cell and record the AddedAt?
-	s.sugar.Infof("ID = %d, affected = %d\n", lastId, rowCnt)
+	s.sugar.Infof("ID = %d, affected = %d\n", lastID, rowCnt)
 	return
 }
 
