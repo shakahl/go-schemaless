@@ -68,22 +68,14 @@ database master.
 that it can be integrated into an organization's "data fabric", creating
 schemas + grants semi-automatically for you, on different sets of shards)
 
-Once you've configured the database with some schemas, I like adding aliases:
-
-MYSQLUSER=....
-MYSQLPASS=....
-
-PGUSER=....
-PGPASS=...
-
-You'll have to create the 'user' schemas - that's what the Makefile likes.
-Or just point it at your own preference.
+You'll have to create at least 4 'user' schemas.
 
 Now, you can run tests a bit more easily. For me, this looks like:
 
-~/go-src/src/github.com/rbastic/go-schemaless$ make test
+~/go-src/src/github.com/rbastic/go-schemaless$ MYSQLUSER=user MYSQLPASS=pass PGUSER=user PGPASS=pass SQLHOST=localhost make test
 
-Investigate and edit the Makefile if needed.
+Having replaced the user and pass with the appropriate usernames and passwords
+for MySQL and Postgres, this should always pass all tests.
 
 Any test cases should be designed in a way that they are repeatable. They
 should not result in errors on subsequent runs, due to the immutable,

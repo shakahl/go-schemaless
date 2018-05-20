@@ -8,17 +8,17 @@ import (
 
 func TestPostgres(t *testing.T) {
 	// TODO(rbastic): Document how to bootstrap an installation to run these tests.
-	user := os.Getenv("SQLUSER")
+	user := os.Getenv("PGUSER")
 	if user == "" {
 		panic("Please specify SQLUSER=...")
 	}
-	pass := os.Getenv("SQLPASS")
+	pass := os.Getenv("PGPASS")
 	if pass == "" {
 		panic("Please specify SQLPASS=...")
 	}
-	host := os.Getenv("SQLHOST")
+	host := os.Getenv("PGHOST")
 	if host == "" {
-		panic("Please specify SQLHOST=...")
+		host = "localhost"
 	}
 	// TODO(rbastic): No custom PORT support for postgres. Laziness.
 	db := os.Getenv("DB")

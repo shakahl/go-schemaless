@@ -8,11 +8,11 @@ import (
 
 func TestMySQL(t *testing.T) {
 	// TODO(rbastic): Document how to bootstrap an installation to run these tests.
-	user := os.Getenv("SQLUSER")
+	user := os.Getenv("MYSQLUSER")
 	if user == "" {
 		panic("Please specify SQLUSER=...")
 	}
-	pass := os.Getenv("SQLPASS")
+	pass := os.Getenv("MYSQLPASS")
 	if pass == "" {
 		panic("Please specify SQLPASS=...")
 	}
@@ -20,7 +20,7 @@ func TestMySQL(t *testing.T) {
 	if host == "" {
 		panic("Please specify SQLHOST=...")
 	}
-	port := os.Getenv("SQLPORT")
+	port := os.Getenv("MYSQLPORT")
 	if port == "" {
 		t.Log("Defaulted to port 3306.")
 		port = "3306"
