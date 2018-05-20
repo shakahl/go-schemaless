@@ -24,27 +24,27 @@ import (
 //     -- [1] 'The Schemaless Data Model', https://eng.uber.com/schemaless-part-one/
 //
 type Cell struct {
-	// RowKey is the value that determines which shard that a cell should map to.
-	//
-	// "We divide the data set into a fixed number of shards (typically configured
-	// to 4096), which we then map to storage nodes. A cell is mapped to a shard
-	// based on the row key of the cell. Each shard is replicated to a
-	// configurable number of storage nodes. Collectively, these storage nodes
-	// form a storage cluster, each consisting of one master and two minions.
-	// Minions (also known as replicas) are distributed across multiple data
-	// centers to provide data redundancy in case of a catastrophic data center
-	// outage." -- [2] 'Storage Nodes', https://eng.uber.com/schemaless-part-two/
+	// "We divide the data set into a fixed number of shards (typically
+	// configured to 4096), which we then map to storage nodes. A cell is
+	// mapped to a shard based on the row key of the cell. Each shard is
+	// replicated to a configurable number of storage nodes. Collectively,
+	// these storage nodes form a storage cluster, each consisting of one
+	// master and two minions.  Minions (also known as replicas) are
+	// distributed across multiple data centers to provide data redundancy in
+	// case of a catastrophic data center outage." -- [2] 'Storage Nodes',
+	// https://eng.uber.com/schemaless-part-two/
 
 	AddedAt    int64
 	RowKey     string // UUID
 	ColumnName string // The actual column name for the individual Body blob
-	RefKey     int64  // Sometimes for versioning, sometimes to sort entries in a list - pick one.
-	Body       []byte // Uber chose JSON, but now... you decide! (Hint: I also chose JSON. -Ryan)
+	RefKey     int64  // for versioning or sorting cells in a list
+	Body       []byte // Uber chose JSON inside MessagePack'd LZ4 blobs
 	CreatedAt  *time.Time
 }
 
-// NewCell constructs a Cell structure with the minimum parameters necessary: a row key and column
-// name (strings), a ref key (int64), and a body ([]byte).
+// NewCell constructs a Cell structure with the minimum parameters necessary:
+// a row key and column name (strings), a ref key (int64), and a body
+// ([]byte).
 func NewCell(rowKey string, columnName string, refKey int64, body []byte) Cell {
 	return Cell{RowKey: rowKey, ColumnName: columnName, RefKey: refKey}
 }
@@ -75,8 +75,8 @@ func (c *Cell) String() string {
 	return buffer.String()
 }
 
-// 'Applications typically group related data into the same column, and then all
-// cells in each column have roughly the same application-side schema. This
-// grouping is a great way to bundle data that changes together, and it allows the
-// application to rapidly change the schema without downtime on the database side.
-// The example below elaborates more on this.' [1]
+// 'Applications typically group related data into the same column, and then
+// all cells in each column have roughly the same application-side schema.
+// This grouping is a great way to bundle data that changes together, and it
+// allows the application to rapidly change the schema without downtime on
+// the database side.  The example below elaborates more on this.' [1]
