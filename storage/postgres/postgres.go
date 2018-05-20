@@ -1,32 +1,35 @@
-// Package fs is a SQLite file-backed implementation
-package fs
+// Package postgres is a postgres-backed Schemaless store.
+package postgres
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
 	"time"
 )
 
-// Storage is a simple file-backed storage.
+// Storage is a Postgres-backed storage.
 type Storage struct {
 	store *sql.DB
 	sugar *zap.SugaredLogger
 }
 
 const (
-	driver = "sqlite3"
-
-	createTableSQL      = "CREATE TABLE cell ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body JSON, created_at DATETIME DEFAULT (datetime('now','localtime')))"
-	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )"
-	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
-	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ? LIMIT %d"
-	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
+	driver              = "postgres"
+	// dsnFormat string parameters: username, password, host, port, database.
+	// parseTime is for parsing and handling *time.Time properly
+	dsnFormat			=  "postgres://%s:%s@%s/%s?sslmode=disable"
+	// TODO(rbastic): Not sure if this is useful or needed but I might as well
+	// include it.
+	//dsnFormat			=  "postgres://%s:%s@%s/%s?sslmode=disable&default_transaction_isolation=repeatable+read'
+	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = $1 AND column_name = $2 AND ref_key = $3 LIMIT 1"
+	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = $1 AND column_name = $2 ORDER BY ref_key DESC LIMIT 1"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > $1 LIMIT %d"
+	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES($1, $2, $3, $4)"
 )
 
 func exec(db *sql.DB, sqlStr string) error {
@@ -37,31 +40,15 @@ func exec(db *sql.DB, sqlStr string) error {
 	return nil
 }
 
-func createTable(ctx context.Context, db *sql.DB) error {
-	return exec(db, createTableSQL)
-}
-
-func createIndex(ctx context.Context, db *sql.DB) error {
-	return exec(db, createIndexSQL)
-}
-
-// New returns a new sqlite file-backed Storage
-func New(path string) *Storage {
-	db, err := sql.Open(driver, path+"_cell.db")
+// New returns a new postgres-backed Storage
+func New( user, pass, host, port, database string) *Storage {
+	// TODO(rbastic): We do not Sprintf() the port.
+	db, err := sql.Open(driver, fmt.Sprintf( dsnFormat, user, pass, host, database) )
 	if err != nil {
 		panic(err)
 	}
 
-	err = createTable(context.TODO(), db)
-	if err != nil {
-		panic(err)
-	}
-
-	err = createIndex(context.TODO(), db)
-	if err != nil {
-		panic(err)
-	}
-
+	// TODO(rbastic): Hmmm.. Should I ping the db?
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
@@ -86,7 +73,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
-	rows, err = s.store.Query(getCellSQL, rowKey, columnKey, refKey)
+	rows, err = s.store.QueryContext(ctx, getCellSQL, rowKey, columnKey, refKey)
 	if err != nil {
 		return
 	}
@@ -128,7 +115,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
-	rows, err = s.store.Query(getCellLatestSQL, rowKey, columnKey)
+	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
 	if err != nil {
 		return
 	}
@@ -188,7 +175,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 
 	var rows *sql.Rows
 	s.sugar.Infow("GetCellsForShard", "query", sqlStr, "value", value)
-	rows, err = s.store.Query(sqlStr, value)
+	rows, err = s.store.QueryContext(ctx, sqlStr, value)
 	if err != nil {
 		return
 	}
@@ -223,7 +210,7 @@ func (s *Storage) GetCellsForShard(ctx context.Context, shardNumber int, locatio
 
 func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
 	var stmt *sql.Stmt
-	stmt, err = s.store.Prepare(putCellSQL)
+	stmt, err = s.store.PrepareContext(ctx, putCellSQL)
 	if err != nil {
 		return
 	}
@@ -234,10 +221,12 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 		return
 	}
 	var lastId int64
+	/*
 	lastId, err = res.LastInsertId()
 	if err != nil {
 		return
 	}
+	*/
 	var rowCnt int64
 	rowCnt, err = res.RowsAffected()
 	if err != nil {
@@ -255,6 +244,7 @@ func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 
 // Destroy closes the in-memory store, and is a completely destructive operation.
 func (s *Storage) Destroy(ctx context.Context) error {
+	// TODO(rbastic): What do if there's an error in Sync()?
 	s.sugar.Sync()
 	return s.store.Close()
 }

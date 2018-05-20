@@ -1,1 +1,1 @@
-go run main.go -createFile ../../storage/mysql/cell.sql -name user -num 4 > create-shards.sql
+go run main.go -db mysql -createFile ../../storage/mysql/cell.sql -name user -num 4 > create-shards.sql

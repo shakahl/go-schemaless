@@ -23,6 +23,9 @@ const (
 	// dsnFormat string parameters: username, password, host, port, database.
 	// parseTime is for parsing and handling *time.Time properly
 	dsnFormat           = "%s:%s@tcp(%s:%s)/%s?parseTime=true"
+	// This space intentionally left blank for facilitating vimdiff
+	// acrosss storages.
+
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
 	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ? LIMIT %d"
@@ -39,13 +42,13 @@ func exec(db *sql.DB, sqlStr string) error {
 
 // New returns a new mysql-backed Storage
 func New( user, pass, host, port, database string) *Storage {
+
 	db, err := sql.Open(driver, fmt.Sprintf( dsnFormat, user, pass, host, port, database) )
 	if err != nil {
 		panic(err)
 	}
 
 	// TODO(rbastic): Hmmm.. Should I ping the db?
-
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
@@ -69,6 +72,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
+	s.sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
 	rows, err = s.store.QueryContext(ctx, getCellSQL, rowKey, columnKey, refKey)
 	if err != nil {
 		return
@@ -110,6 +114,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
+	s.sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
 	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
 	if err != nil {
 		return
@@ -210,6 +215,7 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 		return
 	}
 	var res sql.Result
+	s.sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
 	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body)
 	if err != nil {
 		return
@@ -224,6 +230,7 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	if err != nil {
 		return
 	}
+	// TODO(rbastic): Should we side-affect the cell and record the AddedAt?
 	s.sugar.Infof("ID = %d, affected = %d\n", lastId, rowCnt)
 	return
 }
@@ -235,5 +242,7 @@ func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 
 // Destroy closes the in-memory store, and is a completely destructive operation.
 func (s *Storage) Destroy(ctx context.Context) error {
+	// TODO(rbastic): What do if there's an error in Sync()?
+	s.sugar.Sync()
 	return s.store.Close()
 }
