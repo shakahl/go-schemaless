@@ -2,8 +2,6 @@ package storagetest
 
 import (
 	"context"
-	"errors"
-
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
 	"github.com/satori/go.uuid"
@@ -20,17 +18,6 @@ const (
 	testString2 = "{\"value\": \"The printer is on fire\"}"
 	testString3 = "{\"value\": \"The appropriate printer-fire-response-team has been notified\"}"
 )
-
-type Errstore struct{}
-
-func (e Errstore) Get(key string) ([]byte, bool, error) {
-	return nil, false, errors.New("error storage get")
-}
-func (e Errstore) Set(key string, val []byte) error { return errors.New("error storage Set") }
-func (e Errstore) Delete(key string) (bool, error)  { return false, errors.New("error storage Delete") }
-func (e Errstore) ResetConnection(key string) error {
-	return errors.New("error storage ResetConnection")
-}
 
 func runPuts(t *testing.T, storage schemaless.Storage) string {
 	cellID := uuid.Must(uuid.NewV4()).String()
