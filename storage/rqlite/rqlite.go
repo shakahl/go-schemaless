@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+const (
+	timeParseString = "2006-01-02T15:04:05Z"
+)
+
 type rqliteDB struct {
 	conn *gorqlite.Connection
 	sugar *zap.SugaredLogger
@@ -43,8 +47,6 @@ type Storage struct {
 }
 
 const (
-	// dsnFormat string parameters: username, password, host, port, database.
-	DSNFormat = "%s://%s:%d/?level=%s&timeout=%d"
 	// This space intentionally left blank for facilitating vimdiff
 	// acrosss storages.
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = '%s' AND column_name = '%s' AND ref_key = %d LIMIT 1"
@@ -60,7 +62,6 @@ func New() *Storage {
 }
 
 func (s *Storage) WithZap() *Storage {
-	// TODO(rbastic): Hmmm.. Should I ping the db?
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
@@ -113,10 +114,11 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		cell.RefKey = resRefKey
 		cell.Body = []byte(resBody)
 		var t time.Time
-		t, err = time.Parse(time.RFC3339, resCreatedAt)
+		t, err = time.Parse(timeParseString, resCreatedAt)
 		if err != nil {
 			return
 		}
+		s.sugar.Infow("GetCell: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
 		cell.CreatedAt = &t
 		found = true
 	}
@@ -156,7 +158,8 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		cell.RefKey = resRefKey
 		cell.Body = []byte(resBody)
 		var t time.Time
-		t, err = time.Parse(time.RFC3339, resCreatedAt)
+		t, err = time.Parse(timeParseString, resCreatedAt)
+		s.sugar.Infow("GetCellLatest: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
 		if err != nil {
 			return
 		}
@@ -188,26 +191,42 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		switch value.(type) {
 			case *time.Time:
 				t := value.(*time.Time)
-				valueStr = t.Format(time.RFC3339)
+				valueStr = t.Format(timeParseString)
+				if valueStr == "" {
+					err = fmt.Errorf("PartitionRead had empty value after formatting *time.Time:'%v'", t)
+					return
+				}
 			case time.Time:
 				t := value.(time.Time)
-				valueStr = t.Format(time.RFC3339)
+				valueStr = t.Format(timeParseString)
+				if valueStr == "" {
+					err = fmt.Errorf("PartitionRead had empty value after formatting time.Time:'%v'", t)
+					return
+				}
+			case string:
+				t := value.(string)
+				valueStr = t
+				if valueStr == "" {
+					err = fmt.Errorf("PartitionRead had empty value after formatting string:'%v'", t)
+					return
+				}
 			default:
-				err = fmt.Errorf("PartitionRead unrecognized type %v", reflect.TypeOf(value))
+				err = fmt.Errorf("PartitionRead had unrecognized type %v", reflect.TypeOf(value))
+				return
+		}
 
-			}
 	case "added_at":
 		locationColumn = "added_at"
 		valueStr = fmt.Sprintf("%d", value)
 	default:
-		err = errors.New("Unrecognized location " + location)
+		err = errors.New("PartitionRead had unrecognized location " + location)
 		return
 	}
 
 	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, valueStr, limit)
 
 	var rows []gorqlite.QueryResult
-	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
+	s.sugar.Infow("PartitionRead", "query", sqlStr, "valueStr", valueStr)
 	stmts := make([]string, 1)
 	stmts[0] = sqlStr
 	rows, err = s.store.conn.Query(stmts)
@@ -232,10 +251,12 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		cell.Body = []byte(resBody)
 
 		var t time.Time
-		t, err = time.Parse(time.RFC3339, resCreatedAt)
+
+		t, err = time.Parse(timeParseString, resCreatedAt)
 		if err != nil {
 			return
 		}
+		s.sugar.Infow("PartitionRead: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
 		cell.CreatedAt = &t
 		cells = append(cells, cell)
 		found = true

@@ -10,11 +10,11 @@ func TestPostgres(t *testing.T) {
 	// TODO(rbastic): Document how to bootstrap an installation to run these tests.
 	user := os.Getenv("PGUSER")
 	if user == "" {
-		panic("Please specify SQLUSER=...")
+		panic("Please specify PGUSER=...")
 	}
 	pass := os.Getenv("PGPASS")
 	if pass == "" {
-		panic("Please specify SQLPASS=...")
+		panic("Please specify PGPASS=...")
 	}
 	host := os.Getenv("PGHOST")
 	if host == "" {

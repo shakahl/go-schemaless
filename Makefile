@@ -7,3 +7,4 @@ test:
 	cd storage/fs; go test -v
 	cd storage/mysql; SQLHOST=localhost DB=user0 go test -v
 	cd storage/postgres; SQLHOST=localhost DB=user0 go test -v
+	cd storage/rqlite; go test -v
