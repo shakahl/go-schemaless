@@ -5,7 +5,8 @@ All code is in Golang, no exceptions.
 
 DATABASE SUPPORT
 
-SQLite (for learning), MySQL, or Postgres.
+SQLite (for learning - file and memory-backed storages), rqlite (Distributed
+SQLite), MySQL, and Postgres.
 
 ADDING SUPPORT FOR ADDITIONAL DATABASES / STORAGES
 
@@ -16,7 +17,7 @@ welcome.
 
 SETTING UP FOR DEVELOPMENT AND RUNNING TESTS
 
-1. Install MySQL and postgres, setup users on both.
+1. Install MySQL, postgres, and rqlite, setup users on MySQL and Postgres.
 
 2 Run both shell scripts inside tools/create_shard_schemas, one at a time,
 loading the generated sql file into Postgres and MySQL locally.
