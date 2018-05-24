@@ -45,17 +45,21 @@ gracious for):
 VIDEOS
 
 "Taking Storage for a Ride With Uber", https://www.youtube.com/watch?v=Dg76cNaeB4s (30 mins)
+
 "GOTO 2016 • Taking Storage for a Ride", https://www.youtube.com/watch?v=kq4gp90QUcs (1 hour)
 
 ARTICLES
 
 "Designing Schemaless, Uber Engineering’s Scalable Datastore Using MySQL"
-	"Part One", https://eng.uber.com/schemaless-part-one/ 
-	"Part Two", https://eng.uber.com/schemaless-part-two/ 
-	"Part Three", https://eng.uber.com/schemaless-part-three/ 
+
+"Part One", https://eng.uber.com/schemaless-part-one/
+
+"Part Two", https://eng.uber.com/schemaless-part-two/
+
+"Part Three", https://eng.uber.com/schemaless-part-three/
 
 "Code Migration in Production: Rewriting the Sharding Layer of Uber’s Schemaless Datastore"
-	https://eng.uber.com/schemaless-rewrite/
+https://eng.uber.com/schemaless-rewrite/
 
 The underlying sharding code is github.com/dgryski/go-shardedkv/choosers,
 similar versions of which have powered github.com/photosrv/photosrv and also a
