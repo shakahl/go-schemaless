@@ -40,6 +40,10 @@ func (r*rqliteDB) WithSugar(z *zap.SugaredLogger) *rqliteDB {
 	return r
 }
 
+func (r *rqliteDB) WithTrace( ) *rqliteDB {
+	r.conn.TraceOn(r.sugar)
+}
+
 // Storage is a rqlite-backed storage.
 type Storage struct {
 	store *rqliteDB
