@@ -10,11 +10,11 @@ func TestMySQL(t *testing.T) {
 	// TODO(rbastic): Document how to bootstrap an installation to run these tests.
 	user := os.Getenv("MYSQLUSER")
 	if user == "" {
-		panic("Please specify SQLUSER=...")
+		panic("Please specify MYSQLUSER=...")
 	}
 	pass := os.Getenv("MYSQLPASS")
 	if pass == "" {
-		panic("Please specify SQLPASS=...")
+		panic("Please specify MYSQLPASS=...")
 	}
 	host := os.Getenv("SQLHOST")
 	if host == "" {
