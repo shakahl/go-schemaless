@@ -9,7 +9,7 @@ For learning or other:
 	* SQLite (for learning - file and memory-backed storages)
 	* rqlite (Distributed SQLite) - experimental, broken
 
-For learning and possibly serious usage:
+For potentially serious usage:
 	* MySQL
 	* Postgres
 
