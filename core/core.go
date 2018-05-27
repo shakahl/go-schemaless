@@ -158,7 +158,7 @@ func (kv *KVStore) PartitionRead(ctx context.Context, partitionNumber int, locat
 		}
 	}
 
-	buckets := kv.migration.Buckets()
+	buckets := kv.continuum.Buckets()
 	shard := buckets[partitionNumber]
 	storage := kv.storages[shard]
 
