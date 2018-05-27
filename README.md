@@ -7,7 +7,8 @@ DATABASE SUPPORT
 
 For learning or other:
 
-	* SQLite (for learning - file and memory-backed storages)
+	* SQLite (the 'fs' and 'memory' storages are just file and memory
+	  SQLite backends)
 
 	* rqlite (Distributed SQLite) - experimental, broken
 
