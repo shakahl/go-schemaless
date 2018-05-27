@@ -71,10 +71,10 @@ ARTICLES
 "Code Migration in Production: Rewriting the Sharding Layer of Uber’s Schemaless Datastore"
 https://eng.uber.com/schemaless-rewrite/
 
-The underlying sharding code is github.com/dgryski/go-shardedkv/choosers,
-similar versions of which have powered github.com/photosrv/photosrv and also a
-large sharded MySQL database system. The storage and storagetest code is also
-derived from github.com/dgryski/go-shardedkv.
+The underlying sharding code is https://github.com/dgryski/go-shardedkv/choosers,
+similar versions of which have powered https://github.com/photosrv/photosrv and
+also a large sharded MySQL database system. The storage and storagetest code is
+also derived from https://github.com/dgryski/go-shardedkv
 
 My sincere thanks to Damian Gryski for open-sourcing the above package.
 
