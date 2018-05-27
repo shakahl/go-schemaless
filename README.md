@@ -6,12 +6,17 @@ All code is in Golang, no exceptions.
 DATABASE SUPPORT
 
 For learning or other:
+
 	* SQLite (for learning - file and memory-backed storages)
+
 	* rqlite (Distributed SQLite) - experimental, broken
 
 For potentially serious usage:
+
 	* MySQL
+
 	* Postgres
+
 
 ADDING SUPPORT FOR ADDITIONAL DATABASES / STORAGES
 
