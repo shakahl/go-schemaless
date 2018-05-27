@@ -109,7 +109,7 @@ func main() {
 			return err
 		}
 
-		status.Body = []byte(body)
+		status.Body = body
 
 		// TODO(rbastic): It doesn't appear that this is in the code
 		// example, is there something I'm missing here...?
@@ -128,7 +128,7 @@ func main() {
 	//sl.CallTrigger("BASE", newUUID())
 
 	rowKey := newUUID()
-	testStatus := models.NewCell(rowKey, Status, 1, []byte("{\"Test\"}"))
+	testStatus := models.NewCell(rowKey, Status, 1, "{\"Test\"}")
 	err = sl.PutCell(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
 	if err != nil {
 		fmt.Println("Had an error:", err)

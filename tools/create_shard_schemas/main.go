@@ -20,19 +20,19 @@ func main() {
 
 	var showWarnings bool
 	switch *dbPtr {
-		case "mysql":
-			showWarnings = true
-			createMysql( *namePtr, *numPtr, *createFilePtr, showWarnings )
-		case "postgres":
-			showWarnings = false
-			createPostgres( *namePtr, *numPtr, *createFilePtr, showWarnings )
-		default:
-			panic("Unrecognized database: " + *dbPtr)
+	case "mysql":
+		showWarnings = true
+		createMysql(*namePtr, *numPtr, *createFilePtr, showWarnings)
+	case "postgres":
+		showWarnings = false
+		createPostgres(*namePtr, *numPtr, *createFilePtr, showWarnings)
+	default:
+		panic("Unrecognized database: " + *dbPtr)
 	}
 
 }
 
-func createMysql( name string , num int, createFile string, showWarnings bool) {
+func createMysql(name string, num int, createFile string, showWarnings bool) {
 	for i := 0; i < num; i++ {
 		dbName := fmt.Sprintf("%s%d", name, i)
 
@@ -66,7 +66,7 @@ func createMysql( name string , num int, createFile string, showWarnings bool) {
 	}
 }
 
-func createPostgres( name string, num int, createFile string, showWarnings bool) {
+func createPostgres(name string, num int, createFile string, showWarnings bool) {
 	for i := 0; i < num; i++ {
 		dbName := fmt.Sprintf("%s%d", name, i)
 
@@ -92,7 +92,7 @@ func createPostgres( name string, num int, createFile string, showWarnings bool)
 	}
 }
 
-func readFile( fileName string) (string, error) {
+func readFile(fileName string) (string, error) {
 	fb, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return "", err

@@ -11,8 +11,8 @@ import (
 	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/postgres"
 	"github.com/satori/go.uuid"
-	"strconv"
 	"os"
+	"strconv"
 )
 
 func getShards(user, pass, host, port, prefix string) []core.Shard {

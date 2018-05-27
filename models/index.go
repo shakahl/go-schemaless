@@ -1,8 +1,8 @@
 package models
 
 type Index struct {
-	Name string // CLIENT_INDEX
-	Column string // BASE
+	Name   string   // CLIENT_INDEX
+	Column string   // BASE
 	Fields []string // [ client_id, fare ]
 }
 

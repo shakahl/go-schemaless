@@ -19,10 +19,10 @@ type Storage struct {
 }
 
 const (
-	driver              = "postgres"
+	driver = "postgres"
 	// dsnFormat string parameters: username, password, host, port, database.
 	// parseTime is for parsing and handling *time.Time properly
-	dsnFormat			=  "postgres://%s:%s@%s/%s?sslmode=disable"
+	dsnFormat = "postgres://%s:%s@%s/%s?sslmode=disable"
 	// TODO(rbastic): Not sure if this is useful or needed but I might as well
 	// include it.
 	//dsnFormat			=  "postgres://%s:%s@%s/%s?sslmode=disable&default_transaction_isolation=repeatable+read'
@@ -41,9 +41,9 @@ func exec(db *sql.DB, sqlStr string) error {
 }
 
 // New returns a new postgres-backed Storage
-func New( user, pass, host, port, database string) *Storage {
+func New(user, pass, host, port, database string) *Storage {
 	// TODO(rbastic): We do not Sprintf() the port.
-	db, err := sql.Open(driver, fmt.Sprintf( dsnFormat, user, pass, host, database) )
+	db, err := sql.Open(driver, fmt.Sprintf(dsnFormat, user, pass, host, database))
 	if err != nil {
 		panic(err)
 	}
@@ -222,10 +222,10 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	}
 	var lastID int64
 	/*
-	lastID, err = res.LastInsertId()
-	if err != nil {
-		return
-	}
+		lastID, err = res.LastInsertId()
+		if err != nil {
+			return
+		}
 	*/
 	var rowCnt int64
 	rowCnt, err = res.RowsAffected()

@@ -5,8 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rqlite/gorqlite"
 	"github.com/rbastic/go-schemaless/models"
+	"github.com/rqlite/gorqlite"
 	"go.uber.org/zap"
 	"reflect"
 	"strings"
@@ -18,7 +18,7 @@ const (
 )
 
 type rqliteDB struct {
-	conn *gorqlite.Connection
+	conn  *gorqlite.Connection
 	sugar *zap.SugaredLogger
 }
 
@@ -26,16 +26,16 @@ func newRqlite() *rqliteDB {
 	return &rqliteDB{}
 }
 
-func (r*rqliteDB) WithOpen(url string) *rqliteDB {
+func (r *rqliteDB) WithOpen(url string) *rqliteDB {
 	store, err := gorqlite.Open(url)
-	if err !=nil {
+	if err != nil {
 		panic(err)
 	}
 	r.conn = &store
 	return r
 }
 
-func (r*rqliteDB) WithSugar(z *zap.SugaredLogger) *rqliteDB {
+func (r *rqliteDB) WithSugar(z *zap.SugaredLogger) *rqliteDB {
 	r.sugar = z
 	return r
 }
@@ -71,7 +71,7 @@ func (s *Storage) WithZap() *Storage {
 	return s
 }
 
-func (s *Storage) WithURL( url string) *Storage {
+func (s *Storage) WithURL(url string) *Storage {
 	s.store = newRqlite().WithOpen(url)
 	return s
 }
@@ -134,7 +134,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resRefKey    int64
 		resBody      string
 		resCreatedAt string
-		rows gorqlite.QueryResult
+		rows         gorqlite.QueryResult
 	)
 
 	s.sugar.Infow("GetCellLatest", "querySQL before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
@@ -173,14 +173,14 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
-		resAddedAt   int64
-		resRowKey    string
-		resColName   string
-		resRefKey    int64
-		resBody      string
-		resCreatedAt string
+		resAddedAt     int64
+		resRowKey      string
+		resColName     string
+		resRefKey      int64
+		resBody        string
+		resCreatedAt   string
 		locationColumn string
-		valueStr string
+		valueStr       string
 	)
 
 	switch location {
@@ -189,30 +189,30 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	case "created_at":
 		locationColumn = "created_at"
 		switch value.(type) {
-			case *time.Time:
-				t := value.(*time.Time)
-				valueStr = t.Format(timeParseString)
-				if valueStr == "" {
-					err = fmt.Errorf("PartitionRead had empty value after formatting *time.Time:'%v'", t)
-					return
-				}
-			case time.Time:
-				t := value.(time.Time)
-				valueStr = t.Format(timeParseString)
-				if valueStr == "" {
-					err = fmt.Errorf("PartitionRead had empty value after formatting time.Time:'%v'", t)
-					return
-				}
-			case string:
-				t := value.(string)
-				valueStr = t
-				if valueStr == "" {
-					err = fmt.Errorf("PartitionRead had empty value after formatting string:'%v'", t)
-					return
-				}
-			default:
-				err = fmt.Errorf("PartitionRead had unrecognized type %v", reflect.TypeOf(value))
+		case *time.Time:
+			t := value.(*time.Time)
+			valueStr = t.Format(timeParseString)
+			if valueStr == "" {
+				err = fmt.Errorf("PartitionRead had empty value after formatting *time.Time:'%v'", t)
 				return
+			}
+		case time.Time:
+			t := value.(time.Time)
+			valueStr = t.Format(timeParseString)
+			if valueStr == "" {
+				err = fmt.Errorf("PartitionRead had empty value after formatting time.Time:'%v'", t)
+				return
+			}
+		case string:
+			t := value.(string)
+			valueStr = t
+			if valueStr == "" {
+				err = fmt.Errorf("PartitionRead had empty value after formatting string:'%v'", t)
+				return
+			}
+		default:
+			err = fmt.Errorf("PartitionRead had unrecognized type %v", reflect.TypeOf(value))
+			return
 		}
 
 	case "added_at":

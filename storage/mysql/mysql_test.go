@@ -25,13 +25,29 @@ func TestMySQL(t *testing.T) {
 		t.Log("Defaulted to port 3306.")
 		port = "3306"
 	} else {
-		t.Logf("Using port %s", port)
+		t.Logf("Used port %s", port)
 	}
 	db := os.Getenv("DB")
 	if db == "" {
 		panic("Please specify DB=...")
 	}
 
-	m := New(user, pass, host, port, db)
+	m := New().WithUser(user).
+		WithPass(pass).
+		WithHost(host).
+		WithPort(port).
+		WithDatabase(db)
+
+	err := m.WithZap()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer m.Sugar.Sync()
+
+	err = m.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
 	storagetest.StorageTest(t, m)
 }

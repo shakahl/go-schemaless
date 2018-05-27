@@ -20,7 +20,7 @@ func TestShardedkv(t *testing.T) {
 		shards = append(shards, core.Shard{Name: label, Backend: st.New()})
 	}
 
-	kv := New().WithSource( shards )
+	kv := New().WithSource(shards)
 	defer kv.Destroy(context.TODO())
 
 	for i := 1; i < nElements; i++ {

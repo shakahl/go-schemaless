@@ -34,12 +34,12 @@ type Cell struct {
 	// case of a catastrophic data center outage." -- [2] 'Storage Nodes',
 	// https://eng.uber.com/schemaless-part-two/
 
-	AddedAt    int64 `json:"omitempty"`
-	RowKey     string // UUID
-	ColumnName string // The actual column name for the individual Body blob
-	RefKey     int64  // for versioning or sorting cells in a list
-	Body       string // Uber chose JSON inside MessagePack'd LZ4 blobs
-	CreatedAt  *time.Time  `json:"omitempty"`
+	AddedAt    int64      `json:"omitempty"`
+	RowKey     string     // UUID
+	ColumnName string     // The actual column name for the individual Body blob
+	RefKey     int64      // for versioning or sorting cells in a list
+	Body       string     // Uber chose JSON inside MessagePack'd LZ4 blobs
+	CreatedAt  *time.Time `json:"omitempty"`
 }
 
 // NewCell constructs a Cell structure with the minimum parameters necessary:

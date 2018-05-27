@@ -35,6 +35,6 @@ func main() {
 	// Print out the ID's sequence number
 	fmt.Printf("ID Step  : %d\n", id.Step())
 
-  // Generate and print, all in one.
-  fmt.Printf("ID       : %d\n", node.Generate().Int64())
+	// Generate and print, all in one.
+	fmt.Printf("ID       : %d\n", node.Generate().Int64())
 }

@@ -11,9 +11,30 @@ import (
 	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/mysql"
 	"github.com/satori/go.uuid"
-	"strconv"
 	"os"
+	"strconv"
 )
+
+func newBackend(user, pass, host, port, schemaName string) *st.Storage {
+	m := st.New().WithUser(user).
+		WithPass(pass).
+		WithHost(host).
+		WithPort(port).
+		WithDatabase(schemaName)
+
+	err := m.WithZap()
+	if err != nil {
+		panic(err)
+	}
+
+	err = m.Open()
+	if err != nil {
+		panic(err)
+	}
+
+	// TODO(rbastic): defer Sync() on all backend storage loggers
+	return m
+}
 
 func getShards(user, pass, host, port, prefix string) []core.Shard {
 	var shards []core.Shard
@@ -22,7 +43,7 @@ func getShards(user, pass, host, port, prefix string) []core.Shard {
 	for i := 0; i < nShards; i++ {
 		schemaName := prefix + strconv.Itoa(i)
 		// TODO(rbastic): needs to map to a shard host.
-		shards = append(shards, core.Shard{Name: schemaName, Backend: st.New(user, pass, host, port, schemaName)})
+		shards = append(shards, core.Shard{Name: schemaName, Backend: newBackend(user, pass, host, port, schemaName)})
 	}
 
 	return shards
@@ -74,6 +95,6 @@ func main() {
 	// be used as a record version number, or for sort-order.
 	for i := 0; i < 1000; i++ {
 		refKey := int64(i)
-		kv.PutCell(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: []byte(fakeUserJSON())})
+		kv.PutCell(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
 	}
 }

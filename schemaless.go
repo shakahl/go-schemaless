@@ -58,14 +58,14 @@ type Shard struct {
 
 func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
 
-func (ds * DataStore) WithSource(shards []core.Shard) *DataStore {
+func (ds *DataStore) WithSource(shards []core.Shard) *DataStore {
 	chooser := jh.New(hash64)
 	kv := core.New(chooser, shards)
 	ds.source = kv
 	return ds
 }
 
-func (ds * DataStore) WithTarget(shards []core.Shard) *DataStore {
+func (ds *DataStore) WithTarget(shards []core.Shard) *DataStore {
 	chooser := jh.New(hash64)
 	kv := core.New(chooser, shards)
 	ds.target = kv

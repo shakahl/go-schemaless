@@ -14,15 +14,21 @@ import (
 
 // Storage is a MySQL-backed storage.
 type Storage struct {
+	user     string
+	pass     string
+	host     string
+	port     string
+	database string
+
 	store *sql.DB
-	sugar *zap.SugaredLogger
+	Sugar *zap.SugaredLogger
 }
 
 const (
-	driver              = "mysql"
+	driver = "mysql"
 	// dsnFormat string parameters: username, password, host, port, database.
 	// parseTime is for parsing and handling *time.Time properly
-	dsnFormat           = "%s:%s@tcp(%s:%s)/%s?parseTime=true"
+	dsnFormat = "%s:%s@tcp(%s:%s)/%s?parseTime=true"
 	// This space intentionally left blank for facilitating vimdiff
 	// acrosss storages.
 
@@ -41,25 +47,52 @@ func exec(db *sql.DB, sqlStr string) error {
 }
 
 // New returns a new mysql-backed Storage
-func New( user, pass, host, port, database string) *Storage {
+func New() *Storage {
+	return &Storage{}
+}
 
-	db, err := sql.Open(driver, fmt.Sprintf( dsnFormat, user, pass, host, port, database) )
-	if err != nil {
-		panic(err)
-	}
-
-	// TODO(rbastic): Hmmm.. Should I ping the db?
+func (s *Storage) WithZap() error {
 	logger, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		return err
 	}
-	s := logger.Sugar()
+	sug := logger.Sugar()
+	s.Sugar = sug
+	return nil
+}
 
-	return &Storage{
-		// initialize top-level
-		store: db,
-		sugar: s,
+func (s *Storage) Open() error {
+	db, err := sql.Open(driver, fmt.Sprintf(dsnFormat, s.user, s.pass, s.host, s.port, s.database))
+	if err != nil {
+		return err
 	}
+	s.store = db
+	return nil
+}
+
+func (s *Storage) WithUser(user string) *Storage {
+	s.user = user
+	return s
+}
+
+func (s *Storage) WithPass(pass string) *Storage {
+	s.pass = pass
+	return s
+}
+
+func (s *Storage) WithHost(host string) *Storage {
+	s.host = host
+	return s
+}
+
+func (s *Storage) WithPort(port string) *Storage {
+	s.port = port
+	return s
+}
+
+func (s *Storage) WithDatabase(database string) *Storage {
+	s.database = database
+	return s
 }
 
 func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
@@ -72,7 +105,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
-	s.sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
+	s.Sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
 	rows, err = s.store.QueryContext(ctx, getCellSQL, rowKey, columnKey, refKey)
 	if err != nil {
 		return
@@ -85,7 +118,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCell scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.Sugar.Infow("GetCell scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -114,7 +147,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
-	s.sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
+	s.Sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
 	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
 	if err != nil {
 		return
@@ -127,7 +160,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCellLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.Sugar.Infow("GetCellLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -174,7 +207,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, limit)
 
 	var rows *sql.Rows
-	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
+	s.Sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
 	rows, err = s.store.QueryContext(ctx, sqlStr, value)
 	if err != nil {
 		return
@@ -187,7 +220,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.Sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt
@@ -215,7 +248,7 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 		return
 	}
 	var res sql.Result
-	s.sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
+	s.Sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
 	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body)
 	if err != nil {
 		return
@@ -231,7 +264,7 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 		return
 	}
 	// TODO(rbastic): Should we side-affect the cell and record the AddedAt?
-	s.sugar.Infof("ID = %d, affected = %d\n", lastID, rowCnt)
+	s.Sugar.Infof("ID = %d, affected = %d\n", lastID, rowCnt)
 	return
 }
 
@@ -243,6 +276,6 @@ func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 // Destroy closes the in-memory store, and is a completely destructive operation.
 func (s *Storage) Destroy(ctx context.Context) error {
 	// TODO(rbastic): What do if there's an error in Sync()?
-	s.sugar.Sync()
+	s.Sugar.Sync()
 	return s.store.Close()
 }
