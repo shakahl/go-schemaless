@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
+	"reflect"
 	"time"
 )
 
@@ -25,6 +26,8 @@ type Storage struct {
 }
 
 const (
+	//timeParseString = "2006-01-02T15:04:05Z"
+	timeParseString  = "2006-01-02 15:04:05"
 	driver = "mysql"
 	// dsnFormat string parameters: username, password, host, port, database.
 	// parseTime is for parsing and handling *time.Time properly
@@ -34,7 +37,7 @@ const (
 
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ? LIMIT %d"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > %s LIMIT %d"
 	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
 )
 
@@ -147,8 +150,9 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
-	s.Sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
+	s.Sugar.Infow("GetCellLatest", "query before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
 	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
+	s.Sugar.Infow("GetCellLatest", "query after", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "rows", rows, "error", err)
 	if err != nil {
 		return
 	}
@@ -190,6 +194,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		resCreatedAt *time.Time
 
 		locationColumn string
+		valueStr string
 	)
 
 	switch location {
@@ -197,18 +202,47 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		fallthrough
 	case "created_at":
 		locationColumn = "created_at"
+		switch value.(type) {
+		case *time.Time:
+			t := value.(*time.Time)
+			valueStr = t.Format(timeParseString)
+			if valueStr == "" {
+				err = fmt.Errorf("PartitionRead had empty value after formatting *time.Time:'%v'", t)
+				return
+			}
+		case time.Time:
+			t := value.(time.Time)
+			valueStr = t.Format(timeParseString)
+			if valueStr == "" {
+				err = fmt.Errorf("PartitionRead had empty value after formatting time.Time:'%v'", t)
+				return
+			}
+		case string:
+			s.Sugar.Infow("let me guess, it's a string")
+			t := value.(string)
+			valueStr = t
+			if valueStr == "" {
+				err = fmt.Errorf("PartitionRead had empty value after formatting string:'%v'", t)
+				return
+			}
+		default:
+			err = fmt.Errorf("PartitionRead had unrecognized type %v", reflect.TypeOf(value))
+			return
+		}
+		valueStr = "'" + valueStr + "'"
 	case "added_at":
 		locationColumn = "added_at"
+		valueStr = fmt.Sprintf("%d", value)
 	default:
-		err = errors.New("Unrecognized location " + location)
+		err = errors.New("PartitionRead had unrecognized location " + location)
 		return
 	}
 
-	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, limit)
+	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, valueStr, limit)
 
 	var rows *sql.Rows
-	s.Sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
-	rows, err = s.store.QueryContext(ctx, sqlStr, value)
+	s.Sugar.Infow("PartitionRead", "query", sqlStr, "valueStr", valueStr)
+	rows, err = s.store.QueryContext(ctx, sqlStr)
 	if err != nil {
 		return
 	}

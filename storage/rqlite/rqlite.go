@@ -19,7 +19,7 @@ const (
 
 type rqliteDB struct {
 	conn  *gorqlite.Connection
-	sugar *zap.SugaredLogger
+	Sugar *zap.SugaredLogger
 }
 
 func newRqlite() *rqliteDB {
@@ -36,14 +36,14 @@ func (r *rqliteDB) WithOpen(url string) *rqliteDB {
 }
 
 func (r *rqliteDB) WithSugar(z *zap.SugaredLogger) *rqliteDB {
-	r.sugar = z
+	r.Sugar = z
 	return r
 }
 
 // Storage is a rqlite-backed storage.
 type Storage struct {
 	store *rqliteDB
-	sugar *zap.SugaredLogger
+	Sugar *zap.SugaredLogger
 }
 
 const (
@@ -67,7 +67,7 @@ func (s *Storage) WithZap() *Storage {
 		panic(err)
 	}
 	sug := logger.Sugar()
-	s.sugar = sug
+	s.Sugar = sug
 	return s
 }
 
@@ -91,9 +91,9 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		resCreatedAt string
 	)
 
-	s.sugar.Infow("GetCell", "querySQL before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
+	s.Sugar.Infow("GetCell", "querySQL before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
 	querySQL := fmt.Sprintf(getCellSQL, quoteString(rowKey), quoteString(columnKey), refKey)
-	s.sugar.Infow("GetCell", "querySQL after", querySQL)
+	s.Sugar.Infow("GetCell", "querySQL after", querySQL)
 
 	rows, err := s.store.conn.QueryOne(querySQL)
 	if err != nil {
@@ -106,19 +106,19 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCell scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.Sugar.Infow("GetCell scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
-		cell.Body = []byte(resBody)
+		cell.Body = resBody
 		var t time.Time
 		t, err = time.Parse(timeParseString, resCreatedAt)
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCell: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
+		s.Sugar.Infow("GetCell: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
 		cell.CreatedAt = &t
 		found = true
 	}
@@ -137,9 +137,9 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		rows         gorqlite.QueryResult
 	)
 
-	s.sugar.Infow("GetCellLatest", "querySQL before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
+	s.Sugar.Infow("GetCellLatest", "querySQL before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
 	querySQL := fmt.Sprintf(getCellLatestSQL, quoteString(rowKey), quoteString(columnKey))
-	s.sugar.Infow("GetCellLatest", "querySQL after", querySQL)
+	s.Sugar.Infow("GetCellLatest", "querySQL after", querySQL)
 	rows, err = s.store.conn.QueryOne(querySQL)
 	if err != nil {
 		return
@@ -150,16 +150,16 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCellLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.Sugar.Infow("GetCellLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
-		cell.Body = []byte(resBody)
+		cell.Body = resBody
 		var t time.Time
 		t, err = time.Parse(timeParseString, resCreatedAt)
-		s.sugar.Infow("GetCellLatest: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
+		s.Sugar.Infow("GetCellLatest: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
 		if err != nil {
 			return
 		}
@@ -214,7 +214,6 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 			err = fmt.Errorf("PartitionRead had unrecognized type %v", reflect.TypeOf(value))
 			return
 		}
-
 	case "added_at":
 		locationColumn = "added_at"
 		valueStr = fmt.Sprintf("%d", value)
@@ -226,7 +225,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, valueStr, limit)
 
 	var rows []gorqlite.QueryResult
-	s.sugar.Infow("PartitionRead", "query", sqlStr, "valueStr", valueStr)
+	s.Sugar.Infow("PartitionRead", "query", sqlStr, "valueStr", valueStr)
 	stmts := make([]string, 1)
 	stmts[0] = sqlStr
 	rows, err = s.store.conn.Query(stmts)
@@ -241,22 +240,21 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.Sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
-		cell.Body = []byte(resBody)
-
+		cell.Body = resBody
 		var t time.Time
 
 		t, err = time.Parse(timeParseString, resCreatedAt)
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("PartitionRead: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
+		s.Sugar.Infow("PartitionRead: parsing time", "resCreatedAt", resCreatedAt, "time result", t)
 		cell.CreatedAt = &t
 		cells = append(cells, cell)
 		found = true
@@ -266,11 +264,11 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 }
 
 func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
-	s.sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
+	s.Sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
 
 	insertSQL := fmt.Sprintf(putCellSQL, quoteString(rowKey), quoteString(columnKey), refKey, quoteString(string(cell.Body)))
 
-	s.sugar.Infow("PutCell", "insertSQL", insertSQL)
+	s.Sugar.Infow("PutCell", "insertSQL", insertSQL)
 
 	stmts := make([]string, 1)
 	stmts[0] = insertSQL
@@ -300,7 +298,7 @@ func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 // Destroy closes the in-memory store, and is a completely destructive operation.
 func (s *Storage) Destroy(ctx context.Context) error {
 	// TODO(rbastic): What do if there's an error in Sync()?
-	s.sugar.Sync()
+	s.Sugar.Sync()
 
 	s.store.conn.Close()
 	return nil
