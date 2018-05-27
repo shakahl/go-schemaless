@@ -25,7 +25,7 @@ func TestShardedkv(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: []byte("value" + strconv.Itoa(i))})
+		kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
 	}
 
 	for i := 1; i < nElements; i++ {

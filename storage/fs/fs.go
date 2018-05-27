@@ -104,7 +104,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		cell.RowKey = resRowKey
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
-		cell.Body = []byte(resBody)
+		cell.Body = resBody
 		cell.CreatedAt = resCreatedAt
 		found = true
 	}
@@ -146,7 +146,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		cell.RowKey = resRowKey
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
-		cell.Body = []byte(resBody)
+		cell.Body = resBody
 		cell.CreatedAt = resCreatedAt
 		found = true
 	}
@@ -207,7 +207,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		cell.RowKey = resRowKey
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
-		cell.Body = []byte(resBody)
+		cell.Body = resBody
 		cell.CreatedAt = resCreatedAt
 		cells = append(cells, cell)
 		found = true
