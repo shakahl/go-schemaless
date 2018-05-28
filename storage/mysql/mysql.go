@@ -232,7 +232,21 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		valueStr = "'" + valueStr + "'"
 	case "added_at":
 		locationColumn = "added_at"
-		valueStr = fmt.Sprintf("%d", value)
+		switch value.(type) {
+		case int:
+			t := value.(int)
+			valueStr = fmt.Sprintf("%d", t)
+		case int64:
+			t := value.(int64)
+			valueStr = fmt.Sprintf("%d", t)
+		case string:
+			t := value.(string)
+			valueStr = fmt.Sprintf("%s", t)
+			return
+		default:
+			err = fmt.Errorf("PartitionRead had unrecognized type %v", reflect.TypeOf(value))
+			return
+		}
 	default:
 		err = errors.New("PartitionRead had unrecognized location " + location)
 		return
