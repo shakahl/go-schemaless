@@ -57,8 +57,12 @@ func createMysql(name string, num int, createFile string, showWarnings bool) {
 			fmt.Printf("SHOW WARNINGS;\n")
 		}
 
-		source := fmt.Sprintf("SOURCE %s;", createFile)
-		fmt.Printf("%s\n", source)
+		contents, err := readFile(createFile)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("%s\n", contents)
 
 		if showWarnings {
 			fmt.Printf("SHOW WARNINGS;\n")
