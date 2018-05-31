@@ -150,9 +150,9 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resCreatedAt *time.Time
 		rows         *sql.Rows
 	)
-	s.Sugar.Infow("GetCellLatest", "query before", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
+	s.Sugar.Infow("GetCellLatest", "query before", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey)
 	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
-	s.Sugar.Infow("GetCellLatest", "query after", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "rows", rows, "error", err)
+	s.Sugar.Infow("GetCellLatest", "query after", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey, "rows", rows, "error", err)
 	if err != nil {
 		return
 	}
