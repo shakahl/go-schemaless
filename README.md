@@ -53,6 +53,8 @@ I do not work for Uber Technologies. Everything has been sourced from their
 materials that they've released on the subject matter (which I am extremely
 gracious for): 
 
+CREDITS
+
 VIDEOS
 
 "Taking Storage for a Ride With Uber", https://www.youtube.com/watch?v=Dg76cNaeB4s (30 mins)
@@ -73,9 +75,7 @@ ARTICLES
 https://eng.uber.com/schemaless-rewrite/
 
 The underlying sharding code is https://github.com/dgryski/go-shardedkv/choosers,
-similar versions of which have powered https://github.com/photosrv/photosrv and
-also a large sharded MySQL database system. The storage and storagetest code is
-also derived from https://github.com/dgryski/go-shardedkv
+similar versions of which powered https://github.com/photosrv/photosrv. The choice to utilize jump hash in this implementation is based on the author's experiences working on a large sharded MySQL system. The storage and storagetest code is also derived from https://github.com/dgryski/go-shardedkv
 
 My sincere thanks to Damian Gryski for open-sourcing the above package.
 
