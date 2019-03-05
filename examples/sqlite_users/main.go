@@ -48,11 +48,9 @@ func main() {
 
 	// We're going to demonstrate jump hash+metro hash with FS-backed SQLite
 	// storage.  SQLite is just to make it easy to demonstrate that the data is
-	// being split, with minimal provisioning required on the part of the user
-	// (i.e. we use SQLite as it is designed to be used, for an embedded
-	// scenario.) You can imagine each SQLite file as a separate shard.
+	// being split. You can imagine each resulting SQLite file as a separate shard.
 
-	// You decide the refKey's purpose. For example, it can
+	// As a user, you decide the refKey's purpose. For example, it can
 	// be used as a record version number, or for sort-order.
 
 	for i := 0; i < 1000; i++ {
