@@ -70,12 +70,7 @@ ARTICLES
 "Code Migration in Production: Rewriting the Sharding Layer of Uber’s Schemaless Datastore"
 https://eng.uber.com/schemaless-rewrite/
 
-The underlying sharding code is https://github.com/dgryski/go-shardedkv/choosers,
-similar versions of which have powered https://github.com/photosrv/photosrv and
-also a large sharded MySQL database system. The storage and storagetest code is
-also derived from https://github.com/dgryski/go-shardedkv
-
-My sincere thanks to Damian Gryski for open-sourcing the above package.
+Most of the underlying implementation is derived from https://github.com/dgryski/go-shardedkv.
 
 OTHER RESOURCES
 
@@ -89,3 +84,13 @@ OTHER OPEN-SOURCE IMPLEMENTATIONS
 
 https://github.com/hoteltonight/shameless - Schemaless in Ruby
 
+THANKS
+
+To Damian Gryski for releasing github.com/dgryski/go-shardedkv.
+
+To Booking.com for allowing us to release github.com/photosrv/photosrv in the past.
+
+To Uber Technologies for releasing numerous materials on the design and implementation
+of Mezzanine, their Schemaless store.
+
+And to many others :)
