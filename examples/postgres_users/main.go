@@ -5,12 +5,12 @@ import (
 
 	"fmt"
 	"github.com/dgryski/go-metro"
+	"github.com/gofrs/uuid"
 	"github.com/icrowley/fake"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/postgres"
-	"github.com/gofrs/uuid"
 	"os"
 	"strconv"
 )
@@ -71,6 +71,6 @@ func main() {
 	// be used as a record version number, or for sort-order.
 	for i := 0; i < 1000; i++ {
 		refKey := int64(i)
-		kv.PutCell(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: []byte(fakeUserJSON())})
+		kv.PutCell(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
 	}
 }

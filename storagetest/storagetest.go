@@ -2,9 +2,9 @@ package storagetest
 
 import (
 	"context"
+	"github.com/gofrs/uuid"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
-	"github.com/gofrs/uuid"
 	"testing"
 	"time"
 )

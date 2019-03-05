@@ -5,12 +5,12 @@ import (
 
 	"fmt"
 	"github.com/dgryski/go-metro"
+	"github.com/gofrs/uuid"
 	"github.com/icrowley/fake"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/mysql"
-	"github.com/gofrs/uuid"
 	"os"
 	"strconv"
 )

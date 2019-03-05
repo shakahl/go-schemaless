@@ -27,8 +27,8 @@ type Storage struct {
 
 const (
 	//timeParseString = "2006-01-02T15:04:05Z"
-	timeParseString  = "2006-01-02 15:04:05"
-	driver = "mysql"
+	timeParseString = "2006-01-02 15:04:05"
+	driver          = "mysql"
 	// dsnFormat string parameters: username, password, host, port, database.
 	// parseTime is for parsing and handling *time.Time properly
 	dsnFormat = "%s:%s@tcp(%s:%s)/%s?parseTime=true"
@@ -193,7 +193,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		resCreatedAt *time.Time
 
 		locationColumn string
-		valueStr string
+		valueStr       string
 	)
 
 	switch location {
