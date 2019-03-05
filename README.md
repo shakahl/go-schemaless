@@ -10,8 +10,6 @@ For learning or other:
 	* SQLite (the 'fs' and 'memory' storages are just file and memory
 	  SQLite backends)
 
-	* rqlite (Distributed SQLite) - experimental, broken
-
 For potentially serious usage:
 
 	* MySQL
@@ -28,16 +26,18 @@ welcome.
 
 SETTING UP FOR DEVELOPMENT AND RUNNING TESTS
 
-1. Install MySQL, postgres, and rqlite, setup users on MySQL and Postgres.
+1. Install MySQL and postgres
 
-2 Run both shell scripts inside tools/create_shard_schemas, one at a time,
+2. Setup users on MySQL and Postgres
+
+3. Run both shell scripts inside tools/create_shard_schemas, one at a time,
 loading the generated sql file into Postgres and MySQL locally.
 
 (TODO: Future versions will split the tool's functionality in a way
 that it can be integrated into an organization's "data fabric", creating
 schemas + grants semi-automatically for you, on different sets of shards)
 
-3. Now, you can run tests a bit more easily. For me, this looks like:
+4. Now, you can run tests a bit more easily. For me, this looks like:
 
 ~/go-src/src/github.com/rbastic/go-schemaless$ MYSQLUSER=user MYSQLPASS=pass PGUSER=user PGPASS=pass SQLHOST=localhost make test
 
@@ -49,11 +49,7 @@ subsequent runs due to hard-coded row keys.
 
 DISCLAIMER
 
-I do not work for Uber Technologies. Everything has been sourced from their
-materials that they've released on the subject matter (which I am extremely
-gracious for): 
-
-CREDITS
+I do not work for Uber Technologies.
 
 VIDEOS
 
@@ -75,7 +71,9 @@ ARTICLES
 https://eng.uber.com/schemaless-rewrite/
 
 The underlying sharding code is https://github.com/dgryski/go-shardedkv/choosers,
-similar versions of which powered https://github.com/photosrv/photosrv. The choice to utilize jump hash in this implementation is based on the author's experiences working on a large sharded MySQL system. The storage and storagetest code is also derived from https://github.com/dgryski/go-shardedkv
+similar versions of which have powered https://github.com/photosrv/photosrv and
+also a large sharded MySQL database system. The storage and storagetest code is
+also derived from https://github.com/dgryski/go-shardedkv
 
 My sincere thanks to Damian Gryski for open-sourcing the above package.
 

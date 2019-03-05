@@ -9,7 +9,7 @@ import (
 	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/memory"
 
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"go.uber.org/zap"

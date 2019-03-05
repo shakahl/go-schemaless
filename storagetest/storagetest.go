@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	"testing"
 	"time"
 )

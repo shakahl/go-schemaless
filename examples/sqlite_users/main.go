@@ -10,7 +10,7 @@ import (
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/fs"
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	"strconv"
 )
 

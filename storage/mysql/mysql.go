@@ -59,8 +59,7 @@ func (s *Storage) WithZap() error {
 	if err != nil {
 		return err
 	}
-	sug := logger.Sugar()
-	s.Sugar = sug
+	s.Sugar = logger.Sugar()
 	return nil
 }
 
