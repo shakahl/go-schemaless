@@ -16,7 +16,6 @@ For potentially serious usage:
 
 	* Postgres
 
-
 ADDING SUPPORT FOR ADDITIONAL DATABASES / STORAGES
 
 I will be more than happy to accept well-tested, high-quality implementations
@@ -32,10 +31,6 @@ SETTING UP FOR DEVELOPMENT AND RUNNING TESTS
 
 3. Run both shell scripts inside tools/create_shard_schemas, one at a time,
 loading the generated sql file into Postgres and MySQL locally.
-
-(TODO: Future versions will split the tool's functionality in a way
-that it can be integrated into an organization's "data fabric", creating
-schemas + grants semi-automatically for you, on different sets of shards)
 
 4. Now, you can run tests a bit more easily. For me, this looks like:
 
@@ -86,9 +81,9 @@ https://github.com/hoteltonight/shameless - Schemaless in Ruby
 
 THANKS
 
-To Damian Gryski for releasing github.com/dgryski/go-shardedkv.
+To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv.
 
-To Booking.com for allowing us to release github.com/photosrv/photosrv in the past.
+To Booking.com for allowing us to release https://github.com/photosrv/photosrv in the past.
 
 To Uber Technologies for releasing numerous materials on the design and implementation
 of Mezzanine, their Schemaless store.
