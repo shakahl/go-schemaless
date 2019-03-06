@@ -1,7 +1,7 @@
 This is an open-source, MIT-licensed implementation of Uber's Schemaless
-(immutable BigTable-style sharded MySQL/Postgres)
+(immutable BigTable-style sharded MySQL/Postgres).
 
-All code is in Golang, no exceptions.
+All code is in Golang.
 
 DATABASE SUPPORT
 
@@ -10,22 +10,15 @@ For learning or other:
 	* SQLite (the 'fs' and 'memory' storages are just file and memory
 	  SQLite backends)
 
-For potentially serious usage:
+For more serious testing and usage:
 
 	* MySQL
 
 	* Postgres
 
-ADDING SUPPORT FOR ADDITIONAL DATABASES / STORAGES
-
-I will be more than happy to accept well-tested, high-quality implementations
-for other potential storage backends. If you need support for something (but
-don't see it here) then please file an issue to open discussion up. PRs
-welcome.
-
 SETTING UP FOR DEVELOPMENT AND RUNNING TESTS
 
-1. Install MySQL and postgres
+1. Install MySQL and Postgres
 
 2. Setup users on MySQL and Postgres
 
@@ -40,7 +33,7 @@ Having replaced the user and pass with the appropriate usernames and passwords
 for MySQL and Postgres, this should pass all tests.
 
 Any test cases should be idempotent - they should not result in errors on
-subsequent runs due to hard-coded row keys.
+subsequent runs, for example, due to hard-coded row keys.
 
 DISCLAIMER
 
