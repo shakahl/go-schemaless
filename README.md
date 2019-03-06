@@ -76,7 +76,7 @@ THANKS
 
 To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv.
 
-To Booking.com for allowing us to release https://github.com/photosrv/photosrv in the past.
+To Booking.com for allowing the release of https://github.com/photosrv/photosrv in the past.
 
 To Uber Technologies for releasing numerous materials on the design and implementation
 of Mezzanine, their Schemaless store.
