@@ -1,4 +1,4 @@
-package fs
+package badger
 
 import (
 	"github.com/rbastic/go-schemaless/storagetest"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestFS(t *testing.T) {
+func TestBadger(t *testing.T) {
 
 	dir, err := ioutil.TempDir(os.TempDir(), "schemaless-fs-storagetest")
 
@@ -15,7 +15,11 @@ func TestFS(t *testing.T) {
 		t.Skipf("Unable to create temporary directory: %s", err)
 	}
 
-	m := New(dir)
+	m, err := New(dir)
+
+	if err != nil {
+		t.Fatalf("unable to open badger db")
+	}
 	storagetest.StorageTest(t, m)
 
 	// cleanup

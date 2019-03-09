@@ -36,10 +36,6 @@ func createMysql(name string, num int, createFile string, showWarnings bool) {
 	for i := 0; i < num; i++ {
 		dbName := fmt.Sprintf("%s%d", name, i)
 
-		// TODO(rbastic): These constants could be pulled from a templates
-		// folder full of JSON files, or something else. Uber liked YAML, but
-		// I'm sorry, YAML fans, there will be none of that in this open-source
-		// reimplementation.
 		dropDB := fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)
 		fmt.Printf("%s\n", dropDB)
 
@@ -63,7 +59,6 @@ func createMysql(name string, num int, createFile string, showWarnings bool) {
 		}
 
 		fmt.Printf("%s\n", contents)
-
 		if showWarnings {
 			fmt.Printf("SHOW WARNINGS;\n")
 		}
@@ -74,10 +69,6 @@ func createPostgres(name string, num int, createFile string, showWarnings bool) 
 	for i := 0; i < num; i++ {
 		dbName := fmt.Sprintf("%s%d", name, i)
 
-		// TODO(rbastic): These constants could be pulled from a templates
-		// folder full of JSON files, or something else. Uber liked YAML, but
-		// I'm sorry, YAML fans, there will be none of that in this open-source
-		// reimplementation.
 		dropDB := fmt.Sprintf("DROP DATABASE IF EXISTS %s;", dbName)
 		fmt.Printf("%s\n", dropDB)
 

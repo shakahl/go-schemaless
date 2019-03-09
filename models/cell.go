@@ -1,9 +1,5 @@
 package models
 
-import (
-	"time"
-)
-
 // "[Cell is ... ] the smallest data entity in Schemaless - it is
 // immutable; once written, it cannot be overwritten or deleted. The
 // cell is a JSON blob referenced by a row key, a column name, and a
@@ -23,23 +19,13 @@ import (
 // https://eng.uber.com/schemaless-part-one/
 //
 type Cell struct {
-	// "We divide the data set into a fixed number of shards
-	// (typically configured to 4096), which we then map to storage
-	// nodes. A cell is mapped to a shard based on the row key of
-	// the cell. Each shard is replicated to a configurable number
-	// of storage nodes. Collectively, these storage nodes form a
-	// storage cluster, each consisting of one master and two
-	// minions.  Minions (also known as replicas) are distributed
-	// across multiple data centers to provide data redundancy in
-	// case of a catastrophic data center outage." -- [2] 'Storage
-	// Nodes', https://eng.uber.com/schemaless-part-two/
-
-	AddedAt    int64      `json:",omitempty"`
-	RowKey     string     // UUID
-	ColumnName string     // The actual column name for the individual Body blob
-	RefKey     int64      // for versioning or sorting cells in a list
-	Body       string     // Uber chose JSON inside MessagePack'd LZ4 blobs
-	CreatedAt  *time.Time `json:",omitempty"`
+	Type       string `json:"T,omitempty"` // TODO(rbastic): unused
+	AddedAt    uint64 `json:"A,omitempty"`
+	RowKey     string `json:"R,omitempty"` // UUID, typically, but could be anything
+	ColumnName string `json:"C,omitempty"` // The actual column name for the individual Body blob
+	RefKey     int64  `json:"K,omitempty"` // for versioning or sorting cells in a list
+	Body       string `json:"B,omitempty"` // Uber chose JSON inside MessagePack'd LZ4 blobs, we store raw JSON
+	CreatedAt  uint64 `json:"TS,omitempty"`
 }
 
 // NewCell constructs a Cell structure with the minimum parameters necessary:

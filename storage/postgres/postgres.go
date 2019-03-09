@@ -9,7 +9,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
-	"time"
 )
 
 // Storage is a Postgres-backed storage.
@@ -21,11 +20,7 @@ type Storage struct {
 const (
 	driver = "postgres"
 	// dsnFormat string parameters: username, password, host, port, database.
-	// parseTime is for parsing and handling *time.Time properly
-	dsnFormat = "postgres://%s:%s@%s/%s?sslmode=disable"
-	// TODO(rbastic): Not sure if this is useful or needed but I might as well
-	// include it.
-	//dsnFormat			=  "postgres://%s:%s@%s/%s?sslmode=disable&default_transaction_isolation=repeatable+read'
+	dsnFormat           = "postgres://%s:%s@%s/%s?sslmode=disable"
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = $1 AND column_name = $2 AND ref_key = $3 LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = $1 AND column_name = $2 ORDER BY ref_key DESC LIMIT 1"
 	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > $1 LIMIT %d"
@@ -43,12 +38,12 @@ func exec(db *sql.DB, sqlStr string) error {
 // New returns a new postgres-backed Storage
 func New(user, pass, host, port, database string) *Storage {
 	// TODO(rbastic): We do not Sprintf() the port.
+	// TODO(rbastic): Hmmm.. Should I ping the db?
 	db, err := sql.Open(driver, fmt.Sprintf(dsnFormat, user, pass, host, database))
 	if err != nil {
 		panic(err)
 	}
 
-	// TODO(rbastic): Hmmm.. Should I ping the db?
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
@@ -64,12 +59,12 @@ func New(user, pass, host, port, database string) *Storage {
 
 func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
-		resAddedAt   int64
+		resAddedAt   uint64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt *time.Time
+		resCreatedAt uint64
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
@@ -106,12 +101,12 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 
 func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
-		resAddedAt   int64
+		resAddedAt   uint64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt *time.Time
+		resCreatedAt uint64
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
@@ -146,15 +141,15 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 	return cell, found, nil
 }
 
-func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
-		resAddedAt   int64
+		resAddedAt   uint64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt *time.Time
+		resCreatedAt uint64
 
 		locationColumn string
 	)
@@ -220,29 +215,21 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	if err != nil {
 		return
 	}
-	var lastID int64
-	/*
-		lastID, err = res.LastInsertId()
-		if err != nil {
-			return
-		}
-	*/
 	var rowCnt int64
 	rowCnt, err = res.RowsAffected()
 	if err != nil {
 		return
 	}
-	// TODO(rbastic): Should we side-affect the cell and record the AddedAt?
-	s.sugar.Infof("ID = %d, affected = %d\n", lastID, rowCnt)
+	s.sugar.Infof("affected = %d\n", rowCnt)
 	return
 }
 
-// ResetConnection does not destroy the store for in-memory stores.
+// ResetConnection closes the store.
 func (s *Storage) ResetConnection(ctx context.Context, key string) error {
-	return nil
+	return s.store.Close()
 }
 
-// Destroy closes the in-memory store, and is a completely destructive operation.
+// Destroy closes the store
 func (s *Storage) Destroy(ctx context.Context) error {
 	// TODO(rbastic): What do if there's an error in Sync()?
 	s.sugar.Sync()

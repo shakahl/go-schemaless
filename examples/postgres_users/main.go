@@ -45,9 +45,9 @@ func main() {
 		panic("Please specify SQLUSER=...")
 	}
 	pass := os.Getenv("SQLPASS")
-	// TODO: SQLHOST should end up being equivalent to the computed backend label
-	// For this demonstrative example, we assume you are testing all shard-schemas
-	// on a single MySQL node.
+	// TODO: SQLHOST should end up being equivalent to the computed backend
+	// label For this demonstrative example, we assume you are testing all
+	// shard-schemas on a single MySQL node.
 	host := os.Getenv("SQLHOST")
 	if host == "" {
 		panic("Please specify SQLHOST=...")

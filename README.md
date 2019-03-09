@@ -7,8 +7,9 @@ DATABASE SUPPORT
 
 For learning or other:
 
-	* SQLite (the 'fs' and 'memory' storages are just file and memory
-	  SQLite backends)
+	* SQLite
+
+	* Badger (experimental, local storage only)
 
 For more serious testing and usage:
 
@@ -76,9 +77,9 @@ THANKS
 
 To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv.
 
-To Booking.com for allowing the release of https://github.com/photosrv/photosrv in the past.
+To Booking.com for allowing the release of https://github.com/photosrv/photosrv.
 
-To Uber Technologies for releasing numerous materials on the design and implementation
-of Mezzanine, their Schemaless store.
+To Uber Technologies for releasing numerous materials on the design and
+implementation of Mezzanine, their Schemaless store.
 
 And to many others :)

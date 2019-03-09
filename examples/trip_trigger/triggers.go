@@ -7,7 +7,7 @@ import (
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/memory"
+	st "github.com/rbastic/go-schemaless/storage/badger"
 
 	"github.com/gofrs/uuid"
 	"github.com/tidwall/gjson"
@@ -32,7 +32,11 @@ func getShards(prefix string) []core.Shard {
 
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
-		shards = append(shards, core.Shard{Name: label, Backend: st.New()})
+		stor, err := st.New(label)
+		if err != nil {
+			panic(err)
+		}
+		shards = append(shards, core.Shard{Name: label, Backend: stor})
 	}
 
 	return shards
@@ -68,8 +72,7 @@ func main() {
 
 	billRideFunc := func(rowKey string) error {
 		status, ok, err := sl.GetCellLatest(context.TODO(), rowKey, Status)
-		// NOTE: We deviate from the original example here immediately, because
-		// exceptions do not have to be part of the equation.
+		// NOTE: We deviate from the original example here immediately, because exceptions do not have to be part of the equation.
 		if err != nil {
 			return err
 		}
@@ -103,8 +106,9 @@ func main() {
 		body := "{\"is_completed\":true}"
 		body, err = sjson.Set(body, "result", result)
 
-		// It seems the Python example loves exceptions, I'm not sure the Go
-		// code *should* be the same, but we'll stick with that idea for now.
+		// It seems the Python example loves exceptions, I'm not sure
+		// the Go code *should* be the same, but we'll stick with that
+		// idea for now.
 		if err != nil {
 			return err
 		}
@@ -114,8 +118,7 @@ func main() {
 		// TODO(rbastic): It doesn't appear that this is in the code
 		// example, is there something I'm missing here...?
 		status.RefKey++
-		sl.PutCell(context.TODO(), rowKey, Status, status.RefKey, status)
-		return nil
+		return sl.PutCell(context.TODO(), rowKey, Status, status.RefKey, status)
 	}
 
 	// TODO(rbastic): Need support for some APIs that enable
@@ -132,11 +135,13 @@ func main() {
 	err = sl.PutCell(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
 	if err != nil {
 		fmt.Println("Had an error:", err)
+		return
 	}
 
 	err = billRideFunc(rowKey)
 	if err != nil {
 		fmt.Println("Had an error:", err)
+		return
 	}
 
 	fmt.Println("Oh well.")

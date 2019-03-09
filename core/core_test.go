@@ -2,23 +2,37 @@ package core
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"testing"
 
 	ch "github.com/dgryski/go-shardedkv/choosers/chash"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/memory"
+	st "github.com/rbastic/go-schemaless/storage/badger"
 )
 
-func TestShardedkv(t *testing.T) {
+func TestSchemaless(t *testing.T) {
 	var shards []Shard
-	nElements := 1000
+	nElements := 2048
 	nShards := 10
 
 	for i := 0; i < nShards; i++ {
 		label := "test_shard" + strconv.Itoa(i)
+
+		dir, err := ioutil.TempDir(os.TempDir(), label)
+		if err != nil {
+			t.Skipf("Unable to create temporary directory: %s", err)
+		}
+
+		_ = os.Mkdir(dir, 0644)
+
 		// TODO(rbastic): AddShard isn't used here?
-		shards = append(shards, Shard{Name: label, Backend: st.New()})
+		stor, err := st.New(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		shards = append(shards, Shard{Name: label, Backend: stor})
 	}
 
 	chooser := ch.New()
@@ -28,7 +42,10 @@ func TestShardedkv(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		err := kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for i := 1; i < nElements; i++ {
@@ -51,8 +68,17 @@ func TestShardedkv(t *testing.T) {
 
 	for i := nShards; i < nShards*2; i++ {
 		label := "test_shard" + strconv.Itoa(i)
+
+		dir, err := ioutil.TempDir(os.TempDir(), label)
+
+		if err != nil {
+			t.Skipf("Unable to create temporary directory: %s", err)
+		}
 		migrationBuckets = append(migrationBuckets, label)
-		backend := st.New()
+		backend, err := st.New(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
 		shards = append(shards, Shard{Name: label, Backend: backend})
 		kv.AddShard(label, backend)
 	}
@@ -68,7 +94,7 @@ func TestShardedkv(t *testing.T) {
 
 		v, ok, err := kv.GetCellLatest(context.TODO(), k, "BASE")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to get key '%s': error: %s", k, err)
 		}
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
@@ -131,4 +157,8 @@ func TestShardedkv(t *testing.T) {
 		}
 	}
 
+	err := kv.ResetConnection(context.TODO(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
 }

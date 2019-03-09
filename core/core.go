@@ -15,7 +15,7 @@ type Storage interface {
 	GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
 	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
+	PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
 	// PutCell inits a cell with given row key, column key, and ref key
 	PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
@@ -81,69 +81,66 @@ func (kv *KVStore) GetCell(ctx context.Context, rowKey string, columnKey string,
 	if kv.migration != nil {
 		shard := kv.migration.Choose(rowKey)
 		migStorage = kv.mstorages[shard]
-	}
-	shard := kv.continuum.Choose(rowKey)
-	storage = kv.storages[shard]
-
-	if migStorage != nil {
-		val, ok, err := migStorage.GetCell(ctx, rowKey, columnKey, refKey)
-		if ok {
-			return val, ok, err
+		if migStorage != nil {
+			val, ok, err := migStorage.GetCell(ctx, rowKey, columnKey, refKey)
+			if err != nil {
+				return val, false, err
+			}
+			if ok {
+				return val, ok, err
+			}
 		}
 	}
+
+	shard := kv.continuum.Choose(rowKey)
+	storage = kv.storages[shard]
 
 	return storage.GetCell(ctx, rowKey, columnKey, refKey)
 }
 
 func (kv *KVStore) GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
-	var storage Storage
-	var migStorage Storage
-
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
 	if kv.migration != nil {
 		shard := kv.migration.Choose(rowKey)
-		migStorage = kv.mstorages[shard]
-	}
+		migStorage := kv.mstorages[shard]
 
-	if migStorage != nil {
-		val, ok, err := migStorage.GetCellLatest(ctx, rowKey, columnKey)
-		if err != nil {
-			return val, ok, err
-		}
-		if ok {
-			return val, ok, nil
+		if migStorage != nil {
+			vals, ok, err := migStorage.GetCellLatest(ctx, rowKey, columnKey)
+			if err != nil {
+				return vals, ok, err
+			}
+			if ok {
+				return vals, ok, nil
+			}
 		}
 	}
 
 	shard := kv.continuum.Choose(rowKey)
-	storage = kv.storages[shard]
-
+	storage := kv.storages[shard]
 	return storage.GetCellLatest(ctx, rowKey, columnKey)
 }
 
 // PutCell
 func (kv *KVStore) PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) error {
-	var storage Storage
-
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
 	if kv.migration != nil {
 		shard := kv.migration.Choose(rowKey)
-		storage = kv.mstorages[shard]
-
-		return storage.PutCell(ctx, rowKey, columnKey, refKey, cell)
+		storage := kv.mstorages[shard]
+		if storage != nil {
+			return storage.PutCell(ctx, rowKey, columnKey, refKey, cell)
+		}
 	}
 
 	shard := kv.continuum.Choose(rowKey)
-	storage = kv.storages[shard]
-
+	storage := kv.storages[shard]
 	return storage.PutCell(ctx, rowKey, columnKey, refKey, cell)
 }
 
-func (kv *KVStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (kv *KVStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
@@ -181,9 +178,9 @@ func (kv *KVStore) ResetConnection(ctx context.Context, key string) error {
 			}
 		}
 	}
+
 	shard := kv.continuum.Choose(key)
 	storage := kv.storages[shard]
-
 	return storage.ResetConnection(ctx, key)
 }
 

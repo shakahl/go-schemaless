@@ -1,5 +1,4 @@
-// Package fs is a SQLite file-backed implementation
-package fs
+package sqlite
 
 import (
 	"context"
@@ -12,7 +11,6 @@ import (
 	"time"
 )
 
-// Storage is a simple file-backed storage.
 type Storage struct {
 	store *sql.DB
 	sugar *zap.SugaredLogger
@@ -21,12 +19,12 @@ type Storage struct {
 const (
 	driver = "sqlite3"
 
-	createTableSQL      = "CREATE TABLE cell ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at DATETIME DEFAULT (datetime('now','localtime')))"
+	createTableSQL      = "CREATE TABLE cell ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at UNSIGNED INTEGER DEFAULT 0)"
 	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )"
-	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
+	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
 	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ? LIMIT %d"
-	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
+	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body, created_at ) VALUES(?, ?, ?, ?, ?)"
 )
 
 func exec(db *sql.DB, sqlStr string) error {
@@ -77,12 +75,12 @@ func New(path string) *Storage {
 
 func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
-		resAddedAt   int64
+		resAddedAt   uint64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt *time.Time
+		resCreatedAt int64
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
@@ -105,7 +103,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = uint64(resCreatedAt)
 		found = true
 	}
 
@@ -119,12 +117,12 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 
 func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
-		resAddedAt   int64
+		resAddedAt   uint64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt *time.Time
+		resCreatedAt int64
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
@@ -147,7 +145,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = uint64(resCreatedAt)
 		found = true
 	}
 
@@ -159,15 +157,15 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 	return cell, found, nil
 }
 
-func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
-		resAddedAt   int64
+		resAddedAt   uint64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt *time.Time
+		resCreatedAt int64
 
 		locationColumn string
 	)
@@ -208,7 +206,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = uint64(resCreatedAt)
 		cells = append(cells, cell)
 		found = true
 	}
@@ -222,6 +220,9 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 }
 
 func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
+	if cell.CreatedAt == 0 {
+		cell.CreatedAt = uint64(time.Now().UTC().UnixNano())
+	}
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare(putCellSQL)
 	if err != nil {
@@ -229,12 +230,8 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	}
 	var res sql.Result
 	s.sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
-	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body)
-	if err != nil {
-		return
-	}
-	var lastID int64
-	lastID, err = res.LastInsertId()
+	// TODO(rbastic): fix CreatedAt here
+	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body, cell.CreatedAt)
 	if err != nil {
 		return
 	}
@@ -243,17 +240,14 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	if err != nil {
 		return
 	}
-	// TODO(rbastic): Should we side-affect the cell and record the AddedAt?
-	s.sugar.Infof("ID = %d, affected = %d\n", lastID, rowCnt)
+	s.sugar.Infof("ID = %d, affected = %d\n", rowCnt)
 	return
 }
 
-// ResetConnection does not destroy the store for in-memory stores.
 func (s *Storage) ResetConnection(ctx context.Context, key string) error {
-	return nil
+	return s.store.Close()
 }
 
-// Destroy closes the in-memory store, and is a completely destructive operation.
 func (s *Storage) Destroy(ctx context.Context) error {
 	s.sugar.Sync()
 	return s.store.Close()

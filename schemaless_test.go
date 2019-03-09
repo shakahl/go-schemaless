@@ -4,20 +4,32 @@ import (
 	"context"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/memory"
+	st "github.com/rbastic/go-schemaless/storage/badger"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"testing"
 )
 
-func TestShardedkv(t *testing.T) {
+func TestSchemaless(t *testing.T) {
 	var shards []core.Shard
 	nElements := 1000
 	nShards := 10
 
 	for i := 0; i < nShards; i++ {
 		label := "test_shard" + strconv.Itoa(i)
-		// TODO(rbastic): AddShard isn't used?
-		shards = append(shards, core.Shard{Name: label, Backend: st.New()})
+		dir, err := ioutil.TempDir(os.TempDir(), label)
+
+		if err != nil {
+			t.Skipf("Unable to create temporary directory: %s", err)
+		}
+
+		// TODO(rbastic): AddShard isn't used here?
+		stor, err := st.New(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		shards = append(shards, core.Shard{Name: label, Backend: stor})
 	}
 
 	kv := New().WithSource(shards)
@@ -25,7 +37,10 @@ func TestShardedkv(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		err := kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for i := 1; i < nElements; i++ {

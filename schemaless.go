@@ -18,7 +18,7 @@ type Storage interface {
 	GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
 	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error)
+	PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
 	// PutCell inits a cell with given row key, column key, and ref key
 	PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
@@ -31,12 +31,11 @@ type Storage interface {
 }
 
 // DataStore is our overall datastore structure, backed by at least one
-// KVStore. Flexible double-writing migration strategies could require more
-// than one being listed in this structure below.
+// KVStore.
 type DataStore struct {
 	source *core.KVStore
-	target *core.KVStore
-	// we avoid holding the lock during a call to a storage engine, which may block
+	// we avoid holding the lock during a call to a storage engine, which
+	// may block
 	mu sync.Mutex
 }
 
@@ -65,13 +64,6 @@ func (ds *DataStore) WithSource(shards []core.Shard) *DataStore {
 	return ds
 }
 
-func (ds *DataStore) WithTarget(shards []core.Shard) *DataStore {
-	chooser := jh.New(hash64)
-	kv := core.New(chooser, shards)
-	ds.target = kv
-	return ds
-}
-
 func New() *DataStore {
 	return &DataStore{}
 }
@@ -84,7 +76,7 @@ func (ds *DataStore) GetCellLatest(ctx context.Context, rowKey string, columnKey
 	return ds.source.GetCellLatest(ctx, rowKey, columnKey)
 }
 
-func (ds *DataStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value interface{}, limit int) (cells []models.Cell, found bool, err error) {
+func (ds *DataStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 	return ds.source.PartitionRead(ctx, partitionNumber, location, value, limit)
 }
 
