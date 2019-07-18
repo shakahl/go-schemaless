@@ -1,7 +1,7 @@
 This is an open-source, MIT-licensed implementation of Uber's Schemaless
 (immutable BigTable-style sharded MySQL/Postgres).
 
-All code is in Golang.
+All code is in Go.
 
 DATABASE SUPPORT
 
