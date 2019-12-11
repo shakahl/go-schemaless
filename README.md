@@ -1,5 +1,6 @@
 This is an open-source, MIT-licensed implementation of Uber's Schemaless
-(immutable BigTable-style sharded MySQL/Postgres).
+(immutable BigTable-style sharded MySQL/Postgres). Consider this as a potential
+building block for your own sharded data storage APIs and infrastructure.
 
 All code is in Go.
 
