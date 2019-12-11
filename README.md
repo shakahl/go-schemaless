@@ -10,23 +10,23 @@ All code is in Go.
 API SUPPORTED
 
 ```
-	// GetCell the cell designated (row key, column key, ref key)
-	GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
+// GetCell the cell designated (row key, column key, ref key)
+GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
 
-	// GetCellLatest returns the latest value for a given rowKey and columnKey, and a bool indicating if the key was present
-	GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
+// GetCellLatest returns the latest value for a given rowKey and columnKey, and a bool indicating if the key was present
+GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
-	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
+// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
+PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
-	// PutCell inits a cell with given row key, column key, and ref key
-	PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
+// PutCell inits a cell with given row key, column key, and ref key
+PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
 
-	// ResetConnection reinitializes the connection for the shard responsible for a key
-	ResetConnection(ctx context.Context, key string) error
+// ResetConnection reinitializes the connection for the shard responsible for a key
+ResetConnection(ctx context.Context, key string) error
 
-	// Cleans up any resources, etc.
-	Destroy(ctx context.Context) error
+// Cleans up any resources, etc.
+Destroy(ctx context.Context) error
 ```
 
 DATABASE SUPPORT
