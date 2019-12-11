@@ -1,6 +1,9 @@
 This is an open-source, MIT-licensed implementation of Uber's Schemaless
 (immutable BigTable-style sharded MySQL/Postgres). Consider this as a potential
 building block for your own sharded data storage APIs and infrastructure.
+The github issues list describes what has been intentionally left unimplemented and
+what differences there are between this implementation and Uber's (based on the materials
+linked at the end.)
 
 All code is in Go.
 
