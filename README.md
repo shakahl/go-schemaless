@@ -96,7 +96,7 @@ https://github.com/hoteltonight/shameless - Schemaless in Ruby
 
 THANKS
 
-To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv.
+To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv. This code is significantly derived from Damian's excellent work.
 
 To Booking.com for allowing the release of https://github.com/photosrv/photosrv.
 
