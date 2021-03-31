@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/badger"
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 	"io/ioutil"
 	"os"
 	"strconv"

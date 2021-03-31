@@ -9,7 +9,7 @@ import (
 
 	ch "github.com/dgryski/go-shardedkv/choosers/chash"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/badger"
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
 func TestSchemaless(t *testing.T) {

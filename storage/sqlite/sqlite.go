@@ -44,25 +44,25 @@ func createIndex(ctx context.Context, db *sql.DB) error {
 }
 
 // New returns a new sqlite file-backed Storage
-func New(path string) *Storage {
+func New(path string) (*Storage, error) {
 	db, err := sql.Open(driver, path+"_cell.db")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	err = createTable(context.TODO(), db)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	err = createIndex(context.TODO(), db)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	logger, err := zap.NewProduction()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	s := logger.Sugar()
 
@@ -70,7 +70,7 @@ func New(path string) *Storage {
 		// initialize top-level
 		store: db,
 		sugar: s,
-	}
+	}, nil
 }
 
 func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
@@ -240,7 +240,7 @@ func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey 
 	if err != nil {
 		return
 	}
-	s.sugar.Infof("ID = %d, affected = %d\n", rowCnt)
+	s.sugar.Infof("ID = %s, affected = %d\n", rowKey, rowCnt)
 	return
 }
 

@@ -45,8 +45,10 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 
 	time.Sleep(time.Second * 1)
 
-	defer storage.Destroy(context.TODO())
-	v, ok, err := storage.GetCell(context.TODO(), otherCellID, baseCol, 1)
+	ctx := context.TODO()
+
+	defer storage.Destroy(ctx)
+	v, ok, err := storage.GetCell(ctx, otherCellID, baseCol, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +58,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 
 	cellID := runPuts(t, storage)
 
-	v, ok, err = storage.GetCellLatest(context.TODO(), cellID, baseCol)
+	v, ok, err = storage.GetCellLatest(ctx, cellID, baseCol)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +66,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok)
 	}
 
-	v, ok, err = storage.GetCell(context.TODO(), cellID, baseCol, 1)
+	v, ok, err = storage.GetCell(ctx, cellID, baseCol, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +75,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 	}
 
 	var cells []models.Cell
-	cells, ok, err = storage.PartitionRead(context.TODO(), 0, "timestamp", startTime, 5)
+	cells, ok, err = storage.PartitionRead(ctx, 0, "timestamp", startTime, 5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +87,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Fatal("we have an obvious problem")
 	}
 
-	err = storage.ResetConnection(context.TODO(), otherCellID)
+	err = storage.ResetConnection(ctx, otherCellID)
 	if err != nil {
 		t.Errorf("failed resetting connection for key: err=%v\n", err)
 	}
