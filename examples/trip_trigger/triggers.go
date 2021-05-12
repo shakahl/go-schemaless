@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/google/uuid"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/badger"
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 
-	"github.com/gofrs/uuid"
+	"strconv"
+
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
-	"strconv"
 )
 
 const (
@@ -24,8 +26,6 @@ var (
 	ErrCouldNotBillRider = errors.New("could not bill rider")
 )
 
-// TODO(rbastic): refactor this into a set of Strategy patterns,
-// including mock patterns for tests and examples like this one.
 func getShards(prefix string) []core.Shard {
 	var shards []core.Shard
 	nShards := 4
@@ -41,17 +41,6 @@ func getShards(prefix string) []core.Shard {
 
 	return shards
 }
-
-func newUUID() string {
-	return uuid.Must(uuid.NewV4()).String()
-}
-
-// TODO(rbastic): In the example provided by Uber, this was:
-// ... = NewSchemaless("mezzanine")
-// So a data store identifier will eventually map to
-// a Strategy that can retrieve the list of shards, and a series of
-// Strategy patterns could be implemented for things like etcd, Consul, ...
-// For now, we initialize our shard-storages directly.
 
 func main() {
 	shards := getShards("trips")
@@ -77,7 +66,6 @@ func main() {
 			return err
 		}
 		if !ok {
-			// TODO(rbastic): return SchemalessError(err)?
 			return ErrCouldNotBillRider
 		}
 
@@ -130,7 +118,7 @@ func main() {
 	// pushed to us) and we would then invoke our trigger.
 	//sl.CallTrigger("BASE", newUUID())
 
-	rowKey := newUUID()
+	rowKey := uuid.New().String()
 	testStatus := models.NewCell(rowKey, Status, 1, "{\"Test\"}")
 	err = sl.Put(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
 	if err != nil {
