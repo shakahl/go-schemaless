@@ -11,13 +11,13 @@ All code is in Go.
 API SUPPORTED
 
 ```
-GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
+Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
 
-GetCellLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
+GetLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
 PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
-PutCell(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
+Put(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
 
 ResetConnection(ctx context.Context, key string) error
 
@@ -29,8 +29,6 @@ DATABASE SUPPORT
 For learning or other:
 
 	* SQLite
-
-	* Badger (experimental, local storage only)
 
 For more serious testing and usage:
 
@@ -100,7 +98,6 @@ To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv. This cod
 
 To Booking.com for allowing the release of https://github.com/photosrv/photosrv.
 
-To Uber Technologies for releasing numerous materials on the design and
-implementation of Mezzanine, their Schemaless store.
+To Uber Technologies for releasing numerous materials on the design and implementation of Mezzanine, their Schemaless store.
 
 And to many others :)

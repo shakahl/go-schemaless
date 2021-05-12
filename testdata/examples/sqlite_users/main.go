@@ -55,6 +55,6 @@ func main() {
 
 	for i := 0; i < 1000; i++ {
 		refKey := int64(i)
-		kv.PutCell(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
+		kv.Put(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
 	}
 }

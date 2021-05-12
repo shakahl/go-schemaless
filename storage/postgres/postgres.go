@@ -57,7 +57,7 @@ func New(user, pass, host, port, database string) *Storage {
 	}
 }
 
-func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   uint64
 		resRowKey    string
@@ -67,7 +67,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		resCreatedAt uint64
 		rows         *sql.Rows
 	)
-	s.sugar.Infow("GetCell", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
+	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
 	rows, err = s.store.QueryContext(ctx, getCellSQL, rowKey, columnKey, refKey)
 	if err != nil {
 		return
@@ -80,7 +80,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCell scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("Get scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -99,7 +99,7 @@ func (s *Storage) GetCell(ctx context.Context, rowKey string, columnKey string, 
 	return cell, found, nil
 }
 
-func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   uint64
 		resRowKey    string
@@ -109,7 +109,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		resCreatedAt uint64
 		rows         *sql.Rows
 	)
-	s.sugar.Infow("GetCellLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
+	s.sugar.Infow("GetLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
 	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
 	if err != nil {
 		return
@@ -122,7 +122,7 @@ func (s *Storage) GetCellLatest(ctx context.Context, rowKey, columnKey string) (
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetCellLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("GetLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -203,14 +203,14 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	return cells, found, nil
 }
 
-func (s *Storage) PutCell(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
+func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
 	var stmt *sql.Stmt
 	stmt, err = s.store.PrepareContext(ctx, putCellSQL)
 	if err != nil {
 		return
 	}
 	var res sql.Result
-	s.sugar.Infow("PutCell", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
+	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
 	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body)
 	if err != nil {
 		return

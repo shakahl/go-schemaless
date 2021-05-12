@@ -21,17 +21,17 @@ const (
 
 func runPuts(t *testing.T, storage schemaless.Storage) string {
 	cellID := uuid.Must(uuid.NewV4()).String()
-	err := storage.PutCell(context.TODO(), cellID, baseCol, 1, models.Cell{Body: testString})
+	err := storage.Put(context.TODO(), cellID, baseCol, 1, models.Cell{Body: testString})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = storage.PutCell(context.TODO(), cellID, baseCol, 2, models.Cell{Body: testString2})
+	err = storage.Put(context.TODO(), cellID, baseCol, 2, models.Cell{Body: testString2})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = storage.PutCell(context.TODO(), cellID, baseCol, 3, models.Cell{Body: testString3})
+	err = storage.Put(context.TODO(), cellID, baseCol, 3, models.Cell{Body: testString3})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 	ctx := context.TODO()
 
 	defer storage.Destroy(ctx)
-	v, ok, err := storage.GetCell(ctx, otherCellID, baseCol, 1)
+	v, ok, err := storage.Get(ctx, otherCellID, baseCol, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 
 	cellID := runPuts(t, storage)
 
-	v, ok, err = storage.GetCellLatest(ctx, cellID, baseCol)
+	v, ok, err = storage.GetLatest(ctx, cellID, baseCol)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,12 +66,12 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok)
 	}
 
-	v, ok, err = storage.GetCell(ctx, cellID, baseCol, 1)
+	v, ok, err = storage.Get(ctx, cellID, baseCol, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !ok || string(v.Body) != testString {
-		t.Errorf("GetCell failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok)
+		t.Errorf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok)
 	}
 
 	var cells []models.Cell

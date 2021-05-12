@@ -71,7 +71,7 @@ func main() {
 	}
 
 	billRideFunc := func(rowKey string) error {
-		status, ok, err := sl.GetCellLatest(context.TODO(), rowKey, Status)
+		status, ok, err := sl.GetLatest(context.TODO(), rowKey, Status)
 		// NOTE: We deviate from the original example here immediately, because exceptions do not have to be part of the equation.
 		if err != nil {
 			return err
@@ -90,9 +90,9 @@ func main() {
 		// Otherwise we try to bill.
 
 		// We try to fetch the base trip information from the BASE column.
-		tripInfo, ok, err := sl.GetCellLatest(context.TODO(), rowKey, "BASE")
+		tripInfo, ok, err := sl.GetLatest(context.TODO(), rowKey, "BASE")
 
-		logger.Info("after GetCellLatest BASE", zap.Any("tripInfo", tripInfo))
+		logger.Info("after GetLatest BASE", zap.Any("tripInfo", tripInfo))
 
 		// We bill the rider
 		result := callToCreditCardProcessorForBillingTrip(tripInfo)
@@ -118,7 +118,7 @@ func main() {
 		// TODO(rbastic): It doesn't appear that this is in the code
 		// example, is there something I'm missing here...?
 		status.RefKey++
-		return sl.PutCell(context.TODO(), rowKey, Status, status.RefKey, status)
+		return sl.Put(context.TODO(), rowKey, Status, status.RefKey, status)
 	}
 
 	// TODO(rbastic): Need support for some APIs that enable
@@ -132,7 +132,7 @@ func main() {
 
 	rowKey := newUUID()
 	testStatus := models.NewCell(rowKey, Status, 1, "{\"Test\"}")
-	err = sl.PutCell(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
+	err = sl.Put(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
 	if err != nil {
 		fmt.Println("Had an error:", err)
 		return

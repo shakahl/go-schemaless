@@ -37,7 +37,7 @@ func TestSchemaless(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		err := kv.PutCell(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		err := kv.Put(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,7 +46,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetCellLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
 		}
@@ -62,7 +62,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetCellLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetCellLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
 		if err != nil {
 			t.Fatal(err)
 		}
