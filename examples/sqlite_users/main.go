@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dgryski/go-metro"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/icrowley/fake"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
@@ -14,8 +14,6 @@ import (
 	"strconv"
 )
 
-// TODO(rbastic): refactor this into a set of Strategy patterns,
-// including mock patterns for tests and examples like this one.
 func getShards(prefix string) []core.Shard {
 	var shards []core.Shard
 	nShards := 4
@@ -33,10 +31,6 @@ func getShards(prefix string) []core.Shard {
 }
 
 func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
-
-func newUUID() string {
-	return uuid.Must(uuid.NewV4()).String()
-}
 
 func fakeUserJSON() string {
 	name := fake.FirstName() + " " + fake.LastName()
@@ -59,6 +53,6 @@ func main() {
 
 	for i := 0; i < 1000; i++ {
 		refKey := int64(i)
-		kv.Put(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
+		kv.Put(context.TODO(), uuid.New().String(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
 	}
 }
