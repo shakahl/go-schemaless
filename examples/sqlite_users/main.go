@@ -10,7 +10,7 @@ import (
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	st "github.com/rbastic/go-schemaless/storage/fs"
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 	"strconv"
 )
 
@@ -22,7 +22,11 @@ func getShards(prefix string) []core.Shard {
 
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
-		shards = append(shards, core.Shard{Name: label, Backend: st.New(label)})
+		st, err := st.New(label)
+		if err != nil {
+			panic(err)
+		}
+		shards = append(shards, core.Shard{Name: label, Backend: st})
 	}
 
 	return shards
