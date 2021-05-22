@@ -3,7 +3,6 @@ package schemaless
 import (
 	"context"
 	"github.com/rbastic/go-schemaless/core"
-	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/sqlite"
 	"io/ioutil"
 	"os"
@@ -37,7 +36,7 @@ func TestSchemaless(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		err := kv.Put(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		err := kv.Put(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}

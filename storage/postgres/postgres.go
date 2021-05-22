@@ -203,15 +203,15 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	return cells, found, nil
 }
 
-func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
+func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, body string) (err error) {
 	var stmt *sql.Stmt
 	stmt, err = s.store.PrepareContext(ctx, putCellSQL)
 	if err != nil {
 		return
 	}
 	var res sql.Result
-	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
-	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body)
+	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body)
+	res, err = stmt.Exec(rowKey, columnKey, refKey, body)
 	if err != nil {
 		return
 	}

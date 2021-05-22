@@ -18,7 +18,7 @@ type Storage interface {
 	PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
 	// Put inits a cell with given row key, column key, and ref key
-	Put(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
+	Put(ctx context.Context, rowKey string, columnKey string, refKey int64, body string) (err error)
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -123,7 +123,7 @@ func (kv *KVStore) GetLatest(ctx context.Context, rowKey string, columnKey strin
 }
 
 // Put
-func (kv *KVStore) Put(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) error {
+func (kv *KVStore) Put(ctx context.Context, rowKey string, columnKey string, refKey int64, body string) error {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
@@ -131,13 +131,13 @@ func (kv *KVStore) Put(ctx context.Context, rowKey string, columnKey string, ref
 		shard := kv.migration.Choose(rowKey)
 		storage := kv.mstorages[shard]
 		if storage != nil {
-			return storage.Put(ctx, rowKey, columnKey, refKey, cell)
+			return storage.Put(ctx, rowKey, columnKey, refKey, body)
 		}
 	}
 
 	shard := kv.continuum.Choose(rowKey)
 	storage := kv.storages[shard]
-	return storage.Put(ctx, rowKey, columnKey, refKey, cell)
+	return storage.Put(ctx, rowKey, columnKey, refKey, body)
 }
 
 func (kv *KVStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {

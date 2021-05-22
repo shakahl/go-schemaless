@@ -21,7 +21,7 @@ type Storage interface {
 	PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
 	// Put inits a cell with given row key, column key, and ref key
-	Put(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) (err error)
+	Put(ctx context.Context, rowKey string, columnKey string, refKey int64, body string) (err error)
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -81,8 +81,8 @@ func (ds *DataStore) PartitionRead(ctx context.Context, partitionNumber int, loc
 }
 
 // Put
-func (ds *DataStore) Put(ctx context.Context, rowKey string, columnKey string, refKey int64, cell models.Cell) error {
-	return ds.source.Put(ctx, rowKey, columnKey, refKey, cell)
+func (ds *DataStore) Put(ctx context.Context, rowKey string, columnKey string, refKey int64, body string) error {
+	return ds.source.Put(ctx, rowKey, columnKey, refKey, body)
 }
 
 // ResetConnection implements Storage.ResetConnection()

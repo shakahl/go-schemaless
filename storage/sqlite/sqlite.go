@@ -219,19 +219,17 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	return cells, found, nil
 }
 
-func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, cell models.Cell) (err error) {
-	if cell.CreatedAt == 0 {
-		cell.CreatedAt = uint64(time.Now().UTC().UnixNano())
-	}
+func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, body string) (err error) {
+	createdAt := uint64(time.Now().UTC().UnixNano())
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare(putCellSQL)
 	if err != nil {
 		return
 	}
 	var res sql.Result
-	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", cell.Body)
-	// TODO(rbastic): fix CreatedAt here
-	res, err = stmt.Exec(rowKey, columnKey, refKey, cell.Body, cell.CreatedAt)
+	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body)
+
+	res, err = stmt.Exec(rowKey, columnKey, refKey, body, createdAt)
 	if err != nil {
 		return
 	}

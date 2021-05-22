@@ -21,17 +21,17 @@ const (
 
 func runPuts(t *testing.T, storage schemaless.Storage) string {
 	cellID := uuid.Must(uuid.NewV4()).String()
-	err := storage.Put(context.TODO(), cellID, baseCol, 1, models.Cell{Body: testString})
+	err := storage.Put(context.TODO(), cellID, baseCol, 1, testString)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = storage.Put(context.TODO(), cellID, baseCol, 2, models.Cell{Body: testString2})
+	err = storage.Put(context.TODO(), cellID, baseCol, 2, testString2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = storage.Put(context.TODO(), cellID, baseCol, 3, models.Cell{Body: testString3})
+	err = storage.Put(context.TODO(), cellID, baseCol, 3, testString3)
 	if err != nil {
 		t.Fatal(err)
 	}
