@@ -35,4 +35,3 @@ func (hs *HTTPAPI) writeError(l *zap.Logger, w http.ResponseWriter, callerErr er
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprintf(w, string(marshaledError))
 }
-

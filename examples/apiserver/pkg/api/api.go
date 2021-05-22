@@ -1,18 +1,23 @@
 package api
 
-type Base struct {
-	SiteTitle string
-}
-
 type ErrorResponse struct {
-	SiteTitle       string
 	ErrorText       string
 	Error           string
-	BackToDashboard string
 }
 
 type StatusResponse struct {
-	Base
+	Error   string `json:"error,omitempty"`
+	Success bool   `json:"success"`
+}
+
+type PutRequest struct {
+	RowKey string `json:"rowKey"`
+	ColumnKey string `json:"columnKey"`
+	RefKey int64 `json:"refKey"`
+	Body string `json:"body"`
+}
+
+type PutResponse struct {
 	Error   string `json:"error,omitempty"`
 	Success bool   `json:"success"`
 }

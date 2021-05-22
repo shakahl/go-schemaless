@@ -2,9 +2,8 @@ package httpapi
 
 import (
 	"context"
-	_ "github.com/mattn/go-sqlite3"
-	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -13,34 +12,39 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/rbastic/go-schemaless"
+	"github.com/rbastic/go-schemaless/core"
+
 	loggerMiddleware "github.com/rbastic/go-schemaless/examples/apiserver/pkg/middleware/zap"
 
+	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/config"
 	"net/http"
 
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
+	"strconv"
 	"time"
 )
 
 type Specification struct {
-	Address               string
-	Protocol              string
-	Site                  string
+	Address  string
+	Protocol string
+	Site     string
 
-	Driver    string
-	DSN       string
+	ShardConfigFile string
 }
 
 // HTTPAPI encapsulates everything we need to run a webserver.
 type HTTPAPI struct {
-	Address               string
-	Protocol              string
-	Site                  string
+	Address  string
+	Protocol string
+	Site     string
 
-	Driver        string
-	DSN           string
-	hs            *http.Server
-	l             *zap.Logger
-	db            *sql.DB
+	hs *http.Server
+	l  *zap.Logger
 
+	kv *schemaless.DataStore
+
+	shardConfig *config.ShardConfig
 }
 
 // New requires a zap logger (see pkg/log, and/or
@@ -57,8 +61,6 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 
 	var hs HTTPAPI
 	hs.Protocol = s.Protocol
-	hs.Driver = s.Driver
-	hs.DSN = s.DSN
 	hs.Address = s.Address
 
 	if hs.Address == "" {
@@ -78,17 +80,19 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 	// Set our logger
 	hs.l = l
 
-	dsn := s.DSN
-	if dsn == "" {
-		panic("DSN was not specified, please specify it.")
+	if s.ShardConfigFile == "" {
+		panic("please set APP_SHARDCONFIGFILE")
 	}
 
-	db, err := sql.Open(s.Driver, dsn)
+	hs.shardConfig, err = config.LoadConfig(s.ShardConfigFile)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	hs.db = db
+	err = hs.loadShards()
+	if err != nil {
+		panic(err)
+	}
 
 	mux := chi.NewRouter()
 	mux.NotFound(hs.notFoundHandler)
@@ -141,3 +145,33 @@ func (hs *HTTPAPI) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "We didn't recognize the page you're trying to access.")
 }
 
+func (hs *HTTPAPI) loadShards() error {
+	label := hs.shardConfig.Shards[0].Label
+	driver := hs.shardConfig.Driver
+
+	switch driver {
+	case "sqlite":
+		shards := hs.getSqliteShards(label)
+		hs.kv = schemaless.New().WithSource(shards)
+	default:
+		return fmt.Errorf("unrecognized driver: %s", driver)
+	}
+
+	return nil
+}
+
+func (hs *HTTPAPI) getSqliteShards(prefix string) []core.Shard {
+	var shards []core.Shard
+	nShards := len(hs.shardConfig.Shards)
+
+	for i := 0; i < nShards; i++ {
+		label := prefix + strconv.Itoa(i)
+		st, err := st.New(label)
+		if err != nil {
+			panic(err)
+		}
+		shards = append(shards, core.Shard{Name: label, Backend: st})
+	}
+
+	return shards
+}
