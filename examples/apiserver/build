@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eux
+rm -rf sandbox
+mkdir sandbox
+echo "building apiserver" && \
+cd cmd/apiserver && go build && \
+echo "copying apiserver and config.json (see cmd/apiserver/config.json) to sandbox" && \
+mkdir ../../sandbox/config && \
+cp apiserver ../../sandbox && \
+cd ../../ && \
+mkdir -p sandbox/uploads
