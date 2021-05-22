@@ -1,0 +1,17 @@
+{
+	"driver": "sqlite3",
+	"shards": [
+		{
+			"label": "user"
+		},
+		{
+			"label": "user"
+		},
+		{
+			"label": "user"
+		},
+		{
+			"label": "user"
+		}
+	]
+}

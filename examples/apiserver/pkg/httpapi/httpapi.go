@@ -108,6 +108,12 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 		r.Get("/status", hs.jsonServiceStatusHandler)
 	})
 
+	mux.Route("/api", func(r chi.Router) {
+		render.SetContentType(render.ContentTypeJSON)
+
+		r.Post("/put", hs.jsonPutHandler)
+	})
+
 	server := &http.Server{
 		Addr:    hs.Address,
 		Handler: mux,
@@ -150,7 +156,7 @@ func (hs *HTTPAPI) loadShards() error {
 	driver := hs.shardConfig.Driver
 
 	switch driver {
-	case "sqlite":
+	case "sqlite3":
 		shards := hs.getSqliteShards(label)
 		hs.kv = schemaless.New().WithSource(shards)
 	default:
