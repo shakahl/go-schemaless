@@ -1,6 +1,8 @@
 This is an open-source, MIT-licensed implementation of Uber's Schemaless
 (immutable BigTable-style sharded MySQL/Postgres). Consider this as a potential
-building block for your own sharded data storage APIs and infrastructure.
+learning grounds for your own scalable data storage APIs and infrastructure.
+
+This is only a pet project and not production ready in any capacity.
 
 The github issues list describes what has been intentionally left unimplemented and
 what differences there are between this implementation and Uber's (based on the materials
@@ -88,15 +90,13 @@ Pinterest: https://engineering.pinterest.com/blog/sharding-pinterest-how-we-scal
 
 Martin Fowler's slides on Schemaless Data Structures: https://martinfowler.com/articles/schemaless/
 
-OTHER OPEN-SOURCE IMPLEMENTATIONS
+SIMILAR OPEN-SOURCE WORK
 
-https://github.com/hoteltonight/shameless - Schemaless in Ruby
+https://github.com/hoteltonight/shameless - A similar append-only data store in Ruby influenced by Schemaless
 
 THANKS
 
 To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv. This code is significantly derived from Damian's excellent work.
-
-To Booking.com for allowing the release of https://github.com/photosrv/photosrv.
 
 To Uber Technologies for releasing numerous materials on the design and implementation of Mezzanine, their Schemaless store.
 

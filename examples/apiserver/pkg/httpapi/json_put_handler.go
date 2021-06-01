@@ -1,11 +1,13 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 )
 
 func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
@@ -23,18 +25,20 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.Unmarshal(body, &request); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
 	}
 
-	// TODO: call Put
-
-
-
 	var resp api.PutResponse
 	resp.Success = true
+
+	err = hs.kv.Put(context.TODO(), request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+	if err != nil {
+		resp.Success = false
+		resp.Error = err.Error()
+	}
 
 	respText, err := json.Marshal(resp)
 	if err != nil {
