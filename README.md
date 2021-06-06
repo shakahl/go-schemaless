@@ -13,13 +13,13 @@ All code is in Go.
 API SUPPORTED
 
 ```
-Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
+Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
 
-GetLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
+GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error)
 
-PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
+PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
-Put(ctx context.Context, rowKey string, columnKey string, refKey int64, jsonBody string) (err error)
+Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, jsonBody string) (err error)
 
 ResetConnection(ctx context.Context, key string) error
 
