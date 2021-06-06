@@ -19,12 +19,12 @@ type Storage struct {
 const (
 	driver = "sqlite3"
 
-	createTableSQL      = "CREATE TABLE cell ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at UNSIGNED INTEGER DEFAULT 0)"
-	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniqcell_idx ON cell ( row_key, column_name, ref_key )"
-	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
-	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > ? LIMIT %d"
-	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body, created_at ) VALUES(?, ?, ?, ?, ?)"
+	createTableSQL      = "CREATE TABLE %s ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at UNSIGNED INTEGER DEFAULT 0)"
+	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniq%s_idx ON %s ( row_key, column_name, ref_key )"
+	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
+	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s > ? LIMIT %d"
+	putCellSQL          = "INSERT INTO %s ( row_key, column_name, ref_key, body, created_at ) VALUES(?, ?, ?, ?, ?)"
 )
 
 func exec(db *sql.DB, sqlStr string) error {
@@ -35,27 +35,27 @@ func exec(db *sql.DB, sqlStr string) error {
 	return nil
 }
 
-func createTable(ctx context.Context, db *sql.DB) error {
-	return exec(db, createTableSQL)
+func createTable(ctx context.Context, db *sql.DB, tblName string) error {
+	return exec(db, fmt.Sprintf(createTableSQL, tblName))
 }
 
-func createIndex(ctx context.Context, db *sql.DB) error {
-	return exec(db, createIndexSQL)
+func createIndex(ctx context.Context, db *sql.DB, tblName string) error {
+	return exec(db, fmt.Sprintf(createIndexSQL, tblName, tblName))
 }
 
 // New returns a new sqlite file-backed Storage
-func New(path string) (*Storage, error) {
-	db, err := sql.Open(driver, path+"_cell.db")
+func New(tblName, path string) (*Storage, error) {
+	db, err := sql.Open(driver, path+"_" + tblName + ".db")
 	if err != nil {
 		return nil, err
 	}
 
-	err = createTable(context.TODO(), db)
+	err = createTable(context.TODO(), db, tblName)
 	if err != nil {
 		return nil, err
 	}
 
-	err = createIndex(context.TODO(), db)
+	err = createIndex(context.TODO(), db, tblName)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func New(path string) (*Storage, error) {
 	}, nil
 }
 
-func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   uint64
 		resRowKey    string
@@ -84,7 +84,10 @@ func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refK
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
-	rows, err = s.store.Query(getCellSQL, rowKey, columnKey, refKey)
+
+	sqlQuery := fmt.Sprintf(getCellSQL, tblName)
+
+	rows, err = s.store.Query(sqlQuery, rowKey, columnKey, refKey)
 	if err != nil {
 		return
 	}
@@ -115,7 +118,7 @@ func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refK
 	return cell, found, nil
 }
 
-func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   uint64
 		resRowKey    string
@@ -126,7 +129,9 @@ func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
-	rows, err = s.store.Query(getCellLatestSQL, rowKey, columnKey)
+
+	sqlQuery := fmt.Sprintf(getCellLatestSQL, tblName)
+	rows, err = s.store.Query(sqlQuery, rowKey, columnKey)
 	if err != nil {
 		return
 	}
@@ -157,7 +162,7 @@ func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell
 	return cell, found, nil
 }
 
-func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
 		resAddedAt   uint64
@@ -182,7 +187,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		return
 	}
 
-	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, limit)
+	sqlStr := fmt.Sprintf(getCellsForShardSQL, tblName, locationColumn, limit)
 
 	var rows *sql.Rows
 	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
@@ -219,10 +224,10 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	return cells, found, nil
 }
 
-func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, body string) (err error) {
+func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error) {
 	createdAt := uint64(time.Now().UTC().UnixNano())
 	var stmt *sql.Stmt
-	stmt, err = s.store.Prepare(putCellSQL)
+	stmt, err = s.store.Prepare(fmt.Sprintf(putCellSQL, tblName))
 	if err != nil {
 		return
 	}
@@ -242,10 +247,12 @@ func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int6
 	return
 }
 
+// ResetConnection closes the store.
 func (s *Storage) ResetConnection(ctx context.Context, key string) error {
 	return s.store.Close()
 }
 
+// Destroy closes the store
 func (s *Storage) Destroy(ctx context.Context) error {
 	s.sugar.Sync()
 	return s.store.Close()

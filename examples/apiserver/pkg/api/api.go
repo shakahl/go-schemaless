@@ -11,6 +11,7 @@ type StatusResponse struct {
 }
 
 type PutRequest struct {
+	Table string `json:"table"`
 	RowKey string `json:"rowKey"`
 	ColumnKey string `json:"columnKey"`
 	RefKey int64 `json:"refKey"`

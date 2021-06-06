@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	tblName = "trips"
 	Status = "STATUS"
 )
 
@@ -32,7 +33,7 @@ func getShards(prefix string) []core.Shard {
 
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
-		stor, err := st.New(label)
+		stor, err := st.New(tblName, label)
 		if err != nil {
 			panic(err)
 		}
@@ -60,7 +61,7 @@ func main() {
 	}
 
 	billRideFunc := func(rowKey string) error {
-		status, ok, err := sl.GetLatest(context.TODO(), rowKey, Status)
+		status, ok, err := sl.GetLatest(context.TODO(), tblName, rowKey, Status)
 		// NOTE: We deviate from the original example here immediately, because exceptions do not have to be part of the equation.
 		if err != nil {
 			return err
@@ -78,7 +79,7 @@ func main() {
 		// Otherwise we try to bill.
 
 		// We try to fetch the base trip information from the BASE column.
-		tripInfo, ok, err := sl.GetLatest(context.TODO(), rowKey, "BASE")
+		tripInfo, ok, err := sl.GetLatest(context.TODO(), tblName, rowKey, "BASE")
 
 		logger.Info("after GetLatest BASE", zap.Any("tripInfo", tripInfo))
 
@@ -94,9 +95,6 @@ func main() {
 		body := "{\"is_completed\":true}"
 		body, err = sjson.Set(body, "result", result)
 
-		// It seems the Python example loves exceptions, I'm not sure
-		// the Go code *should* be the same, but we'll stick with that
-		// idea for now.
 		if err != nil {
 			return err
 		}
@@ -106,21 +104,12 @@ func main() {
 		// TODO(rbastic): It doesn't appear that this is in the code
 		// example, is there something I'm missing here...?
 		status.RefKey++
-		return sl.Put(context.TODO(), rowKey, Status, status.RefKey, status)
+		return sl.Put(context.TODO(), tblName, rowKey, Status, status.RefKey, status.Body)
 	}
 
-	// TODO(rbastic): Need support for some APIs that enable
-	// the functionality Uber talks about in their articles.
-	// The APIs are not documented.
-	//sl = sl.WithTrigger("BASE", billRideFunc)
-
-	// In a real implementation, we would pull for notifications (or have them
-	// pushed to us) and we would then invoke our trigger.
-	//sl.CallTrigger("BASE", newUUID())
-
 	rowKey := uuid.New().String()
-	testStatus := models.NewCell(rowKey, Status, 1, "{\"Test\"}")
-	err = sl.Put(context.TODO(), rowKey, Status, testStatus.RefKey, testStatus)
+	testStatus := models.NewCell(rowKey, Status, 1, "{\"Test\": \"Value\"}")
+	err = sl.Put(context.TODO(), tblName, rowKey, Status, testStatus.RefKey, testStatus.Body)
 	if err != nil {
 		fmt.Println("Had an error:", err)
 		return
@@ -132,5 +121,5 @@ func main() {
 		return
 	}
 
-	fmt.Println("Oh well.")
+	fmt.Println("Done.")
 }

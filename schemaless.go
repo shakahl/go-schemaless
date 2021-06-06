@@ -12,21 +12,21 @@ import (
 // Storage is a key-value storage backend
 type Storage interface {
 	// Get the cell designated (row key, column key, ref key)
-	Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
+	Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error)
 
 	// GetLatest returns the latest value for a given rowKey and columnKey, and a bool indicating if the key was present
-	GetLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
+	GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error)
 
 	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
+	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
 
 	// Put inits a cell with given row key, column key, and ref key
-	Put(ctx context.Context, rowKey string, columnKey string, refKey int64, body string) (err error)
+	Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error)
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
 
-	// Cleans up any resources, etc.
+	// Destroy cleans up any resources, etc.
 	Destroy(ctx context.Context) error
 }
 
@@ -57,6 +57,7 @@ type Shard struct {
 
 func hash64(b []byte) uint64 { return metro.Hash64(b, 0) }
 
+// WithSource constructs a jumphash chooser for the given source slice of []core.Shard
 func (ds *DataStore) WithSource(shards []core.Shard) *DataStore {
 	chooser := jh.New(hash64)
 	kv := core.New(chooser, shards)
@@ -64,25 +65,29 @@ func (ds *DataStore) WithSource(shards []core.Shard) *DataStore {
 	return ds
 }
 
+// New is an empty constructor for DataStore.
 func New() *DataStore {
 	return &DataStore{}
 }
 
-func (ds *DataStore) Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
-	return ds.source.Get(ctx, rowKey, columnKey, refKey)
+// Get implements Storage.Get()
+func (ds *DataStore) Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+	return ds.source.Get(ctx, tblName, rowKey, columnKey, refKey)
 }
 
-func (ds *DataStore) GetLatest(ctx context.Context, rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
-	return ds.source.GetLatest(ctx, rowKey, columnKey)
+// GetLatest implements Storage.GetLatest()
+func (ds *DataStore) GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
+	return ds.source.GetLatest(ctx, tblName, rowKey, columnKey)
 }
 
-func (ds *DataStore) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
-	return ds.source.PartitionRead(ctx, partitionNumber, location, value, limit)
+// PartitionRead implements Storage.PartitionRead()
+func (ds *DataStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+	return ds.source.PartitionRead(ctx, tblName, partitionNumber, location, value, limit)
 }
 
-// Put
-func (ds *DataStore) Put(ctx context.Context, rowKey string, columnKey string, refKey int64, body string) error {
-	return ds.source.Put(ctx, rowKey, columnKey, refKey, body)
+// Put implements Storage.Put()
+func (ds *DataStore) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) error {
+	return ds.source.Put(ctx, tblName, rowKey, columnKey, refKey, body)
 }
 
 // ResetConnection implements Storage.ResetConnection()

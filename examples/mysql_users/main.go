@@ -9,11 +9,12 @@ import (
 	"github.com/icrowley/fake"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
-	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/mysql"
 	"os"
 	"strconv"
 )
+
+const tblName = "cell"
 
 func newBackend(user, pass, host, port, schemaName string) *st.Storage {
 	m := st.New().WithUser(user).
@@ -95,6 +96,6 @@ func main() {
 	// be used as a record version number, or for sort-order.
 	for i := 0; i < 1000; i++ {
 		refKey := int64(i)
-		kv.Put(context.TODO(), newUUID(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
+		kv.Put(context.TODO(), tblName, newUUID(), "PII", refKey, fakeUserJSON())
 	}
 }

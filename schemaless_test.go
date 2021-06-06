@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+const tblName = "cell"
+
 func TestSchemaless(t *testing.T) {
 	var shards []core.Shard
 	nElements := 1000
@@ -24,7 +26,7 @@ func TestSchemaless(t *testing.T) {
 		}
 
 		// TODO(rbastic): AddShard isn't used here?
-		stor, err := st.New(dir)
+		stor, err := st.New(tblName, dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,7 +38,7 @@ func TestSchemaless(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		err := kv.Put(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
+		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -45,7 +47,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
 		}
@@ -61,7 +63,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +80,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if err != nil {
 			t.Fatal(err)
 		}

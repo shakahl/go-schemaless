@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	ch "github.com/dgryski/go-shardedkv/choosers/chash"
-	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/sqlite"
 )
+
+const tblName = "cell"
 
 func TestSchemaless(t *testing.T) {
 	var shards []Shard
@@ -18,7 +19,7 @@ func TestSchemaless(t *testing.T) {
 	nShards := 10
 
 	for i := 0; i < nShards; i++ {
-		label := "test_shard" + strconv.Itoa(i)
+		label := tblName + strconv.Itoa(i)
 
 		dir, err := ioutil.TempDir(os.TempDir(), label)
 		if err != nil {
@@ -28,7 +29,7 @@ func TestSchemaless(t *testing.T) {
 		_ = os.Mkdir(dir, 0644)
 
 		// TODO(rbastic): AddShard isn't used here?
-		stor, err := st.New(dir)
+		stor, err := st.New(label, dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -42,7 +43,7 @@ func TestSchemaless(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		err := kv.Put(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +52,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if ok != true {
 			t.Errorf("failed to get key: %s\n", k)
 		}
@@ -67,7 +68,7 @@ func TestSchemaless(t *testing.T) {
 	var migrationBuckets []string
 
 	for i := nShards; i < nShards*2; i++ {
-		label := "test_shard" + strconv.Itoa(i)
+		label := tblName + strconv.Itoa(i)
 
 		dir, err := ioutil.TempDir(os.TempDir(), label)
 
@@ -75,7 +76,7 @@ func TestSchemaless(t *testing.T) {
 			t.Skipf("Unable to create temporary directory: %s", err)
 		}
 		migrationBuckets = append(migrationBuckets, label)
-		backend, err := st.New(dir)
+		backend, err := st.New(label, dir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,7 +93,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if err != nil {
 			t.Fatalf("failed to get key '%s': error: %s", k, err)
 		}
@@ -109,7 +110,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		t.Logf("Storing test%d BASE refKey %d value%d", i, i, i)
 		refKey := int64(i)
-		err := kv.Put(context.TODO(), "test"+strconv.Itoa(i), "BASE", refKey, models.Cell{RefKey: refKey, Body: "value" + strconv.Itoa(i)})
+		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +119,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -144,7 +145,7 @@ func TestSchemaless(t *testing.T) {
 	for i := 1; i < nElements; i++ {
 		k := "test" + strconv.Itoa(i)
 
-		v, ok, err := kv.GetLatest(context.TODO(), k, "BASE")
+		v, ok, err := kv.GetLatest(context.TODO(), tblName, k, "BASE")
 		if err != nil {
 			t.Fatal(err)
 		}

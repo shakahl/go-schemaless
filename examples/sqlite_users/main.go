@@ -9,10 +9,11 @@ import (
 	"github.com/icrowley/fake"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
-	"github.com/rbastic/go-schemaless/models"
 	st "github.com/rbastic/go-schemaless/storage/sqlite"
 	"strconv"
 )
+
+const tblName = "cell"
 
 func getShards(prefix string) []core.Shard {
 	var shards []core.Shard
@@ -20,7 +21,7 @@ func getShards(prefix string) []core.Shard {
 
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
-		st, err := st.New(label)
+		st, err := st.New(tblName, label)
 		if err != nil {
 			panic(err)
 		}
@@ -53,6 +54,6 @@ func main() {
 
 	for i := 0; i < 1000; i++ {
 		refKey := int64(i)
-		kv.Put(context.TODO(), uuid.New().String(), "PII", refKey, models.Cell{RefKey: refKey, Body: fakeUserJSON()})
+		kv.Put(context.TODO(), tblName, uuid.New().String(), "PII", refKey, fakeUserJSON())
 	}
 }

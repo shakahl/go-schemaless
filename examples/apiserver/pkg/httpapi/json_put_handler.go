@@ -34,7 +34,7 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 	var resp api.PutResponse
 	resp.Success = true
 
-	err = hs.kv.Put(context.TODO(), request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+	err = hs.kv.Put(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey, request.Body)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()

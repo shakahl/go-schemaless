@@ -31,6 +31,7 @@ func main() {
 	metadata.LastName = "Bastic"
 
 	var putRequest api.PutRequest
+	putRequest.Table = "cell"
 	putRequest.RowKey = uuid.New().String()
 	putRequest.ColumnKey = "BASE"
 	putRequest.RefKey = time.Now().UTC().UnixNano()

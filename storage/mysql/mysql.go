@@ -4,6 +4,7 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rbastic/go-schemaless/models"
@@ -19,23 +20,20 @@ type Storage struct {
 	database string
 
 	store *sql.DB
-	Sugar *zap.SugaredLogger
+	sugar *zap.SugaredLogger
 }
 
 const (
-	//timeParseString = "2006-01-02T15:04:05Z"
-	timeParseString = "2006-01-02 15:04:05"
 	driver          = "mysql"
+	timeParseString = "2006-01-02 15:04:05"
 	// dsnFormat string parameters: username, password, host, port, database.
 	// parseTime is for parsing and handling *time.Time properly
 	dsnFormat = "%s:%s@tcp(%s:%s)/%s?parseTime=true"
-	// This space intentionally left blank for facilitating vimdiff
-	// acrosss storages.
 
-	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM cell WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
-	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM cell WHERE %s > %d LIMIT %d"
-	putCellSQL          = "INSERT INTO cell ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
+	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM %s WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
+	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s > ? LIMIT %d"
+	putCellSQL          = "INSERT INTO %s ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
 )
 
 func exec(db *sql.DB, sqlStr string) error {
@@ -56,7 +54,7 @@ func (s *Storage) WithZap() error {
 	if err != nil {
 		return err
 	}
-	s.Sugar = logger.Sugar()
+	s.sugar = logger.Sugar()
 	return nil
 }
 
@@ -94,7 +92,7 @@ func (s *Storage) WithDatabase(database string) *Storage {
 	return s
 }
 
-func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   uint64
 		resRowKey    string
@@ -104,8 +102,11 @@ func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refK
 		resCreatedAt uint64
 		rows         *sql.Rows
 	)
-	s.Sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
-	rows, err = s.store.QueryContext(ctx, getCellSQL, rowKey, columnKey, refKey)
+	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
+
+	sqlQuery := fmt.Sprintf(getCellSQL, tblName)
+
+	rows, err = s.store.QueryContext(ctx, sqlQuery, rowKey, columnKey, refKey)
 	if err != nil {
 		return
 	}
@@ -117,7 +118,7 @@ func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refK
 		if err != nil {
 			return
 		}
-		s.Sugar.Infow("Get scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("Get scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -136,7 +137,7 @@ func (s *Storage) Get(ctx context.Context, rowKey string, columnKey string, refK
 	return cell, found, nil
 }
 
-func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
+func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
 		resAddedAt   uint64
 		resRowKey    string
@@ -146,9 +147,10 @@ func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell
 		resCreatedAt uint64
 		rows         *sql.Rows
 	)
-	s.Sugar.Infow("GetLatest", "query before", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey)
-	rows, err = s.store.QueryContext(ctx, getCellLatestSQL, rowKey, columnKey)
-	s.Sugar.Infow("GetLatest", "query after", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey, "rows", rows, "error", err)
+	s.sugar.Infow("GetLatest", "query before", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey)
+
+	sqlQuery := fmt.Sprintf(getCellLatestSQL, tblName)
+	rows, err = s.store.Query(sqlQuery, rowKey, columnKey)
 	if err != nil {
 		return
 	}
@@ -160,7 +162,7 @@ func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell
 		if err != nil {
 			return
 		}
-		s.Sugar.Infow("GetLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("GetLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -179,7 +181,7 @@ func (s *Storage) GetLatest(ctx context.Context, rowKey, columnKey string) (cell
 	return cell, found, nil
 }
 
-func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
 		resAddedAt   uint64
@@ -192,11 +194,23 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		locationColumn string
 	)
 
-	sqlStr := fmt.Sprintf(getCellsForShardSQL, locationColumn, value, limit)
+	switch location {
+	case "timestamp":
+		fallthrough
+	case "created_at":
+		locationColumn = "created_at"
+	case "added_at":
+		locationColumn = "added_at"
+	default:
+		err = errors.New("unrecognized location " + location)
+		return
+	}
+
+	sqlStr := fmt.Sprintf(getCellsForShardSQL, tblName, locationColumn, limit)
 
 	var rows *sql.Rows
-	s.Sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
-	rows, err = s.store.QueryContext(ctx, sqlStr)
+	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
+	rows, err = s.store.QueryContext(ctx, sqlStr, value)
 	if err != nil {
 		return
 	}
@@ -208,7 +222,7 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 		if err != nil {
 			return
 		}
-		s.Sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt
@@ -229,14 +243,15 @@ func (s *Storage) PartitionRead(ctx context.Context, partitionNumber int, locati
 	return cells, found, nil
 }
 
-func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int64, body string) (err error) {
+func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error) {
+
 	var stmt *sql.Stmt
-	stmt, err = s.store.PrepareContext(ctx, putCellSQL)
+	stmt, err = s.store.PrepareContext(ctx, fmt.Sprintf(putCellSQL, tblName))
 	if err != nil {
 		return
 	}
 	var res sql.Result
-	s.Sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body)
+	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body)
 	res, err = stmt.Exec(rowKey, columnKey, refKey, body)
 	if err != nil {
 		return
@@ -246,19 +261,17 @@ func (s *Storage) Put(ctx context.Context, rowKey, columnKey string, refKey int6
 	if err != nil {
 		return
 	}
-	s.Sugar.Infof("affected = %d\n", rowCnt)
+	s.sugar.Infof("affected = %d\n", rowCnt)
 	return
 }
 
-// ResetConnection does not destroy the store for in-memory stores.
+// ResetConnection closes the store.
 func (s *Storage) ResetConnection(ctx context.Context, key string) error {
-	return nil
+	return s.store.Close()
 }
 
-// Destroy closes the in-memory store, and is a completely destructive operation.
+// Destroy closes the store
 func (s *Storage) Destroy(ctx context.Context) error {
-	// TODO(rbastic): What do if there's an error in Sync()?
-	// We could at least log it.
-	s.Sugar.Sync()
+	s.sugar.Sync()
 	return s.store.Close()
 }
