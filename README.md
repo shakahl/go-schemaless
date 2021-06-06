@@ -38,25 +38,6 @@ For more serious testing and usage:
 
 	* Postgres
 
-SETTING UP FOR DEVELOPMENT AND RUNNING TESTS
-
-1. Install MySQL and Postgres
-
-2. Setup users on MySQL and Postgres
-
-3. Run both shell scripts inside tools/create_shard_schemas, one at a time,
-loading the generated sql file into Postgres and MySQL locally.
-
-4. Now, you can run tests a bit more easily. For me, this looks like:
-
-~/go-src/src/github.com/rbastic/go-schemaless$ MYSQLUSER=user MYSQLPASS=pass PGUSER=user PGPASS=pass SQLHOST=localhost make test
-
-Having replaced the user and pass with the appropriate usernames and passwords
-for MySQL and Postgres, this should pass all tests.
-
-Any test cases should be idempotent - they should not result in errors on
-subsequent runs, for example, due to hard-coded row keys.
-
 DISCLAIMER
 
 I do not work for Uber Technologies.
