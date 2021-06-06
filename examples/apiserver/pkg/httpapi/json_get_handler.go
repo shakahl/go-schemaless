@@ -8,11 +8,12 @@ import (
 	"net/http"
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/models"
 )
 
-func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
+func (hs *HTTPAPI) jsonGetHandler(w http.ResponseWriter, r *http.Request) {
 
-	var request api.PutRequest
+	var request api.GetRequest
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		hs.writeError(hs.l, w, err)
@@ -31,15 +32,20 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
-	var resp api.PutResponse
+	var resp api.GetResponse
 	resp.Success = true
 
-	err = hs.kv.Put(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+	var cell models.Cell
+	var found bool
+
+	cell, found, err = hs.kv.Get(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
 	}
+
+	resp.Cell = &cell
+	resp.Found = found
 
 	respText, err := json.Marshal(resp)
 	if err != nil {
@@ -49,7 +55,6 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
 	_, err = w.Write([]byte(respText))
 	if err != nil {
 		hs.writeError(hs.l, w, err)

@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"fmt"
+
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/go-chi/chi"
@@ -17,12 +18,14 @@ import (
 
 	loggerMiddleware "github.com/rbastic/go-schemaless/examples/apiserver/pkg/middleware/zap"
 
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/config"
 	"net/http"
 
-	st "github.com/rbastic/go-schemaless/storage/sqlite"
+	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/config"
+
 	"strconv"
 	"time"
+
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
 type Specification struct {
@@ -112,6 +115,8 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 		render.SetContentType(render.ContentTypeJSON)
 
 		r.Post("/put", hs.jsonPutHandler)
+		r.Post("/get", hs.jsonGetHandler)
+		r.Post("/getLatest", hs.jsonGetLatestHandler)
 	})
 
 	server := &http.Server{
@@ -157,7 +162,10 @@ func (hs *HTTPAPI) loadShards() error {
 
 	switch driver {
 	case "sqlite3":
-		shards := hs.getSqliteShards(label)
+		shards, err := hs.getSqliteShards(label)
+		if err != nil {
+			return err
+		}
 		hs.kv = schemaless.New().WithSource(shards)
 	default:
 		return fmt.Errorf("unrecognized driver: %s", driver)
@@ -166,18 +174,19 @@ func (hs *HTTPAPI) loadShards() error {
 	return nil
 }
 
-func (hs *HTTPAPI) getSqliteShards(prefix string) []core.Shard {
+func (hs *HTTPAPI) getSqliteShards(prefix string) ([]core.Shard, error) {
 	var shards []core.Shard
 	nShards := len(hs.shardConfig.Shards)
 
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
-		st, err := st.New(label)
+		// NOTE: sqlite implementation supports only a single table per shard created at start time 
+		st, err := st.New("cell", label)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		shards = append(shards, core.Shard{Name: label, Backend: st})
 	}
 
-	return shards
+	return shards, nil
 }

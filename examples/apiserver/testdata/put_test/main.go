@@ -34,7 +34,7 @@ func main() {
 	putRequest.Table = "cell"
 	putRequest.RowKey = uuid.New().String()
 	putRequest.ColumnKey = "BASE"
-	putRequest.RefKey = time.Now().UTC().UnixNano()
+	putRequest.RefKey = 1
 
 	var metaBody []byte
 	metaBody, err = json.Marshal(metadata)

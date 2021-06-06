@@ -83,9 +83,9 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 		resCreatedAt int64
 		rows         *sql.Rows
 	)
-	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
-
 	sqlQuery := fmt.Sprintf(getCellSQL, tblName)
+
+	//s.sugar.Infow("Get", "query", sqlQuery, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
 
 	rows, err = s.store.Query(sqlQuery, rowKey, columnKey, refKey)
 	if err != nil {
@@ -99,7 +99,7 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("Get scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		//s.sugar.Infow("Get scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -190,7 +190,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 	sqlStr := fmt.Sprintf(getCellsForShardSQL, tblName, locationColumn, limit)
 
 	var rows *sql.Rows
-	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
+	//s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
 	rows, err = s.store.Query(sqlStr, value)
 	if err != nil {
 		return
@@ -203,7 +203,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		//s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt
@@ -229,22 +229,25 @@ func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, re
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare(fmt.Sprintf(putCellSQL, tblName))
 	if err != nil {
-		return
+		return err
 	}
 	var res sql.Result
-	s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body)
+	//s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body, "CreatedAt", createdAt)
 
 	res, err = stmt.Exec(rowKey, columnKey, refKey, body, createdAt)
 	if err != nil {
-		return
+		return err
 	}
 	var rowCnt int64
 	rowCnt, err = res.RowsAffected()
 	if err != nil {
-		return
+		return err
 	}
-	s.sugar.Infof("ID = %s, affected = %d\n", rowKey, rowCnt)
-	return
+	if rowCnt == 0 {
+		return errors.New("row-count was zero for put")
+	}
+	//s.sugar.Infof("ID = %s, affected = %d\n", rowKey, rowCnt)
+	return nil
 }
 
 // ResetConnection closes the store.

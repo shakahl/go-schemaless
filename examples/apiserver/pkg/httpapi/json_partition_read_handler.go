@@ -8,11 +8,12 @@ import (
 	"net/http"
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/models"
 )
 
-func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
+func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Request) {
 
-	var request api.PutRequest
+	var request api.PartitionReadRequest
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		hs.writeError(hs.l, w, err)
@@ -31,15 +32,20 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
-	var resp api.PutResponse
+	var resp api.PartitionReadResponse
 	resp.Success = true
 
-	err = hs.kv.Put(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+	var cells []models.Cell
+	var found bool
+
+	cells, found, err = hs.kv.PartitionRead(context.TODO(), request.Table, request.PartitionNumber, request.Location, request.Value, request.Limit)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
 	}
+
+	resp.Cells = cells
+	resp.Found = found
 
 	respText, err := json.Marshal(resp)
 	if err != nil {
@@ -47,8 +53,12 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		hs.writeError(hs.l, w, err)
+		return
+	}
 
 	_, err = w.Write([]byte(respText))
 	if err != nil {

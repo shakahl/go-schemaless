@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +11,9 @@ import (
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 )
 
-func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
+func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) {
 
-	var request api.PutRequest
+	var request api.GetLatestRequest
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		hs.writeError(hs.l, w, err)
@@ -27,18 +28,23 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
+			hs.writeError(hs.l, w, err)
+			return
 		}
 	}
 
+	var resp api.GetLatestResponse
 
-	var resp api.PutResponse
-	resp.Success = true
-
-	err = hs.kv.Put(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+	cell, found, err := hs.kv.GetLatest(context.TODO(), request.Table, request.RowKey, request.ColumnKey)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
+		resp.Found = false
+	} else {
+		fmt.Printf("(server) GetCellLatest local: %+v %s %s \n", cell, found, err)
+		resp.Success = true
+		resp.Cell = cell
+		resp.Found = found
 	}
 
 	respText, err := json.Marshal(resp)
@@ -46,6 +52,7 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		hs.writeError(hs.l, w, err)
 		return
 	}
+	fmt.Printf("(server) GetCellLatest response: %s\n", respText)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
