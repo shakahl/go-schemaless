@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/tidwall/sjson"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -35,24 +37,43 @@ func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) 
 
 	var resp api.GetLatestResponse
 
+	reqid := uuid.New().String()
+
 	cell, found, err := hs.kv.GetLatest(context.TODO(), request.Table, request.RowKey, request.ColumnKey)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
 		resp.Found = false
 	} else {
-		fmt.Printf("(server) GetCellLatest local: %+v %s %s \n", cell, found, err)
+		fmt.Printf("%s (server) GetCellLatest localzz: %+v %s %s \n", reqid, cell, found, err)
 		resp.Success = true
-		resp.Cell = cell
+		resp.Cell = &cell
 		resp.Found = found
 	}
 
-	respText, err := json.Marshal(resp)
+	cellText, err := json.Marshal(cell)
 	if err != nil {
 		hs.writeError(hs.l, w, err)
 		return
 	}
-	fmt.Printf("(server) GetCellLatest response: %s\n", respText)
+
+	respBytes, err := json.Marshal(resp)
+	if err != nil {
+		hs.writeError(hs.l, w, err)
+		return
+	}
+
+	fmt.Printf("%s cellText->%s\n", reqid, cellText)
+
+	fmt.Printf("%s respTExt before->%s\n", reqid, respBytes)
+	respText, err := sjson.SetRaw(string(respBytes), "cell", string(cellText))
+	if err != nil {
+		hs.writeError(hs.l, w, err)
+		return
+	}
+	fmt.Printf("%s respTExt before->%s\n", reqid, respText)
+
+	fmt.Printf("%s (server) GetCellLatest response: %s\n", reqid, respText)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
