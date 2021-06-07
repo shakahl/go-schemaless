@@ -121,7 +121,7 @@ func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, c
 		return models.Cell{}, false, errors.New(glr.Error)
 	}
 
-	return glr.Cell, glr.Found, nil
+	return *glr.Cell, glr.Found, nil
 }
 
 func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
