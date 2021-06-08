@@ -53,12 +53,8 @@ func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		hs.writeError(hs.l, w, err)
-		return
-	}
 
 	_, err = w.Write([]byte(respText))
 	if err != nil {

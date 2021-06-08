@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 
 	"encoding/json"
 
@@ -157,7 +156,6 @@ func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNum
 	if err != nil {
 		return nil, false, err
 	}
-	fmt.Printf("(client) PARTITIONREAD RESPONSEBODY:'%s'\n", responseBody)
 
 	var prr api.PartitionReadResponse
 	err = json.Unmarshal(responseBody, &prr)
