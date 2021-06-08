@@ -44,7 +44,7 @@ func (hs *HTTPAPI) jsonGetHandler(w http.ResponseWriter, r *http.Request) {
 		resp.Error = err.Error()
 	}
 
-	resp.Cell = &cell
+	resp.Cell = cell
 	resp.Found = found
 
 	respText, err := json.Marshal(resp)

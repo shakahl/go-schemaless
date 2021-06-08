@@ -74,7 +74,7 @@ func (c *Client) Get(ctx context.Context, tblName string, rowKey string, columnK
 		return models.Cell{}, false, errors.New(gr.Error)
 	}
 
-	return *gr.Cell, gr.Found, nil
+	return gr.Cell, gr.Found, nil
 }
 
 func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
@@ -111,8 +111,6 @@ func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, c
 
 	var glr api.GetLatestResponse
 
-	fmt.Printf("(client) GETLATEST RESPONSEBODY:'%s'\n", responseBody)
-
 	err = json.Unmarshal(responseBody, &glr)
 	if err != nil {
 		return models.Cell{}, false, err
@@ -121,7 +119,7 @@ func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, c
 		return models.Cell{}, false, errors.New(glr.Error)
 	}
 
-	return *glr.Cell, glr.Found, nil
+	return glr.Cell, glr.Found, nil
 }
 
 func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
@@ -208,6 +206,7 @@ func (c *Client) Put(ctx context.Context, tblName string, rowKey string, columnK
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("(client) PARTITIONREAD RESPONSEBODY:'%s'\n", responseBody)
 
 	pr := new(api.PutResponse)
 	err = json.Unmarshal(responseBody, pr)

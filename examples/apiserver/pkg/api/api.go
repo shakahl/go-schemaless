@@ -32,7 +32,7 @@ type GetResponse struct {
 	Success bool   `json:"success"`
 	Found   bool   `json:"found"`
 
-	Cell *models.Cell `json:"cell"`
+	Cell models.Cell `json:"cell"`
 }
 
 type GetLatestRequest struct {
@@ -46,7 +46,7 @@ type GetLatestResponse struct {
 	Success bool   `json:"success"`
 	Found   bool   `json:"found"`
 
-	Cell *models.Cell `json:"cell"`
+	Cell models.Cell `json:"cell"`
 }
 
 type PartitionReadRequest struct {

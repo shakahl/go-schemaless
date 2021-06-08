@@ -47,7 +47,7 @@ func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) 
 	} else {
 		fmt.Printf("%s (server) GetCellLatest localzz: %+v %s %s \n", reqid, cell, found, err)
 		resp.Success = true
-		resp.Cell = &cell
+		resp.Cell = cell
 		resp.Found = found
 	}
 
