@@ -52,33 +52,35 @@ ARTICLES
 
 "Designing Schemaless, Uber Engineering’s Scalable Datastore Using MySQL"
 
-"Part One", https://eng.uber.com/schemaless-part-one/
+https://eng.uber.com/schemaless-part-one/ - "Part One"
 
-"Part Two", https://eng.uber.com/schemaless-part-two/
+https://eng.uber.com/schemaless-part-two/ - "Part Two"
 
-"Part Three", https://eng.uber.com/schemaless-part-three/
+https://eng.uber.com/schemaless-part-three/ - "Part Three" 
 
-"Code Migration in Production: Rewriting the Sharding Layer of Uber’s Schemaless Datastore"
-https://eng.uber.com/schemaless-rewrite/
+https://eng.uber.com/schemaless-rewrite/ - "Code Migration in Production: Rewriting the Sharding Layer of Uber’s Schemaless Datastore"
 
-Most of the underlying implementation is derived from https://github.com/dgryski/go-shardedkv.
+https://eng.uber.com/mezzanine-codebase-data-migration/ - "Project Mezzanine: The Great Migration"
 
 OTHER RESOURCES
 
-FriendFeed: https://backchannel.org/blog/friendfeed-schemaless-mysql
+https://backchannel.org/blog/friendfeed-schemaless-mysql - FriendFeed's original design
 
-Pinterest: https://engineering.pinterest.com/blog/sharding-pinterest-how-we-scaled-our-mysql-fleet
+https://engineering.pinterest.com/blog/sharding-pinterest-how-we-scaled-our-mysql-fleet - Pinterest's original design
 
-Martin Fowler's slides on Schemaless Data Structures: https://martinfowler.com/articles/schemaless/
+https://martinfowler.com/articles/schemaless/ - Martin Fowler's slides on Schemaless Data Structures
 
 SIMILAR OPEN-SOURCE WORK
 
-https://github.com/hoteltonight/shameless - A similar append-only data store in Ruby influenced by Schemaless
+https://github.com/hoteltonight/shameless - A similar append-only data store in Ruby influenced by Schemaless.
+
+https://github.com/dgryski/go-shardedkv - Much of the implementation is a derivative of this work.
 
 THANKS
 
-To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv. This code is significantly derived from Damian's excellent work.
+To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv
 
-To Uber Technologies for releasing numerous materials on the design and implementation of Mezzanine, their Schemaless store.
+To Uber Technologies for releasing numerous materials on the design and
+implementation of Mezzanine, their Schemaless store.
 
 And to many others :)
