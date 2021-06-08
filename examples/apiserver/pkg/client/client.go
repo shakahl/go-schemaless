@@ -157,6 +157,7 @@ func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNum
 	if err != nil {
 		return nil, false, err
 	}
+	fmt.Printf("(client) PARTITIONREAD RESPONSEBODY:'%s'\n", responseBody)
 
 	var prr api.PartitionReadResponse
 	err = json.Unmarshal(responseBody, &prr)
@@ -206,7 +207,6 @@ func (c *Client) Put(ctx context.Context, tblName string, rowKey string, columnK
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("(client) PARTITIONREAD RESPONSEBODY:'%s'\n", responseBody)
 
 	pr := new(api.PutResponse)
 	err = json.Unmarshal(responseBody, pr)

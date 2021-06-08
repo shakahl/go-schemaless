@@ -117,6 +117,7 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 		r.Post("/put", hs.jsonPutHandler)
 		r.Post("/get", hs.jsonGetHandler)
 		r.Post("/getLatest", hs.jsonGetLatestHandler)
+		r.Post("/partitionRead", hs.jsonPartitionReadHandler)
 	})
 
 	server := &http.Server{
