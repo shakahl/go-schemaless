@@ -128,7 +128,7 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 		resCreatedAt int64
 		rows         *sql.Rows
 	)
-	s.sugar.Infow("GetLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
+	//s.sugar.Infow("GetLatest", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey)
 
 	sqlQuery := fmt.Sprintf(getCellLatestSQL, tblName)
 	rows, err = s.store.Query(sqlQuery, rowKey, columnKey)
@@ -143,7 +143,7 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 		if err != nil {
 			return
 		}
-		s.sugar.Infow("GetLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		//s.sugar.Infow("GetLatest scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		cell.AddedAt = resAddedAt
 		cell.RowKey = resRowKey
@@ -190,7 +190,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 	sqlStr := fmt.Sprintf(getCellsForShardSQL, tblName, locationColumn, limit)
 
 	var rows *sql.Rows
-	//s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
+	s.sugar.Infow("PartitionRead", "query", sqlStr, "value", value)
 	rows, err = s.store.Query(sqlStr, value)
 	if err != nil {
 		return
@@ -203,7 +203,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		if err != nil {
 			return
 		}
-		//s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
+		s.sugar.Infow("PartitionRead: scanned data", "AddedAt", resAddedAt, "RowKey", resRowKey, "ColName", resColName, "RefKey", resRefKey, "Body", resBody, "CreatedAt", resCreatedAt)
 
 		var cell models.Cell
 		cell.AddedAt = resAddedAt
@@ -232,7 +232,6 @@ func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, re
 		return err
 	}
 	var res sql.Result
-	//s.sugar.Infow("Put", "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey, "Body", body, "CreatedAt", createdAt)
 
 	res, err = stmt.Exec(rowKey, columnKey, refKey, body, createdAt)
 	if err != nil {
