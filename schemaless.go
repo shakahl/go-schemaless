@@ -18,7 +18,7 @@ type Storage interface {
 	GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error)
 
 	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
+	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error)
 
 	// Put inits a cell with given row key, column key, and ref key
 	Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error)
@@ -81,7 +81,7 @@ func (ds *DataStore) GetLatest(ctx context.Context, tblName, rowKey, columnKey s
 }
 
 // PartitionRead implements Storage.PartitionRead()
-func (ds *DataStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (ds *DataStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {
 	return ds.source.PartitionRead(ctx, tblName, partitionNumber, location, value, limit)
 }
 

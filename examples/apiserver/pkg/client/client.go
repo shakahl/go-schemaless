@@ -12,6 +12,7 @@ import (
 
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 const contentTypeJSON = "application/json"
@@ -123,7 +124,7 @@ func (c *Client) GetLatest(ctx context.Context, storeName, tblName, rowKey, colu
 	return glr.Cell, glr.Found, nil
 }
 
-func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/partitionRead"
 
 	// TODO: add context
@@ -133,7 +134,7 @@ func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, p
 	partitionReadRequest.Table = tblName
 	partitionReadRequest.PartitionNumber = partitionNumber
 	partitionReadRequest.Location = location
-	partitionReadRequest.Value = value
+	partitionReadRequest.Value = strconv.FormatInt(value, 10)
 	partitionReadRequest.Limit = limit
 
 	partitionReadRequestMarshal, err := json.Marshal(partitionReadRequest)

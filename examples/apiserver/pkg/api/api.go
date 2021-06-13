@@ -57,7 +57,7 @@ type PartitionReadRequest struct {
 	Table           string `json:"table"`
 	PartitionNumber int    `json:"partitionNumber"`
 	Location        string `json:"location"`
-	Value           uint64 `json:"value"`
+	Value           string `json:"value"`
 	Limit           int    `json:"limit"`
 }
 

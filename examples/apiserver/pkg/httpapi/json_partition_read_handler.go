@@ -9,6 +9,8 @@ import (
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 	"github.com/rbastic/go-schemaless/models"
+
+	"strconv"
 )
 
 func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,11 +27,8 @@ func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := json.Unmarshal(body, &request); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
+		hs.writeError(hs.l, w, err)
+		return
 	}
 
 	var resp api.PartitionReadResponse
@@ -41,6 +40,12 @@ func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Reque
 		resp.Error = ErrMissingStore.Error()
 	}
 
+	intValue, err := strconv.ParseInt(request.Value, 10, 64)
+	if err != nil {
+		hs.writeError(hs.l, w, err)
+		return
+	}
+
 	store, err := hs.getStore(request.Store)
 	if err != nil {
 		resp.Success = false
@@ -48,7 +53,7 @@ func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Reque
 	} else {
 		resp.Success = true
 
-		cells, found, err = store.PartitionRead(context.TODO(), request.Table, request.PartitionNumber, request.Location, request.Value, request.Limit)
+		cells, found, err = store.PartitionRead(context.TODO(), request.Table, request.PartitionNumber, request.Location, intValue, request.Limit)
 		if err != nil {
 			resp.Success = false
 			resp.Error = err.Error()

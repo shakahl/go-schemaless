@@ -15,7 +15,7 @@ type Storage interface {
 	GetLatest(ctx context.Context, tblName string, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
 	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
+	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error)
 
 	// Put inits a cell with given row key, column key, and ref key
 	Put(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64, body string) (err error)
@@ -139,7 +139,7 @@ func (kv *KVStore) Put(ctx context.Context, tblName, rowKey, columnKey string, r
 	return storage.Put(ctx, tblName, rowKey, columnKey, refKey, body)
 }
 
-func (kv *KVStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (kv *KVStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {
 
 	kv.mu.Lock()
 	defer kv.mu.Unlock()

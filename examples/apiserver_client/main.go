@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/gofrs/uuid"
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/client"
 	"github.com/rbastic/go-schemaless/models"
@@ -43,12 +44,25 @@ func runPuts(cl *client.Client) string {
 	return cellID
 }
 
+type Specification struct {
+	StartTime int64
+}
+
 func main() {
+	var s Specification
+	err := envconfig.Process("app", &s)
+	if err != nil {
+		panic(err)
+	}
+
 	cl := client.New().WithAddress("http://localhost:4444")
 
-	startTime := uint64(time.Now().UTC().UnixNano())
+	startTime := time.Now().UTC().UnixNano()
+	if s.StartTime != 0 {
+		startTime = s.StartTime
+	}
 
-	time.Sleep(time.Second * 1)
+	fmt.Printf("startTime: %d\n", startTime)
 
 	ctx := context.TODO()
 
@@ -61,6 +75,8 @@ func main() {
 	}
 
 	cellID := runPuts(cl)
+
+	time.Sleep(1 * time.Second)
 
 	v, ok, err = cl.GetLatest(ctx, storeName, tblName, cellID, baseCol)
 	if err != nil {
@@ -91,4 +107,5 @@ func main() {
 		panic("we have an obvious problem")
 	}
 
+	fmt.Printf("cells: %+v\n", cells)
 }
