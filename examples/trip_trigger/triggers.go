@@ -20,7 +20,7 @@ import (
 
 const (
 	tblName = "trips"
-	Status = "STATUS"
+	Status  = "STATUS"
 )
 
 var (

@@ -38,7 +38,7 @@ func TestSchemaless(t *testing.T) {
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
+		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value"+strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}

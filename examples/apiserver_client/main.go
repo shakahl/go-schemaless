@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/gofrs/uuid"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/client"
 	"github.com/rbastic/go-schemaless/models"
 )
@@ -14,7 +14,7 @@ import (
 // see storagetest/storagetest.go - that code is mostly a copy of this.
 
 const (
-	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere? 
+	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere?
 	storeName     = "trips"
 	tblName       = "cell"
 	baseCol       = "BASE"

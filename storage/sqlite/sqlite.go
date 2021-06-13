@@ -45,7 +45,7 @@ func createIndex(ctx context.Context, db *sql.DB, tblName string) error {
 
 // New returns a new sqlite file-backed Storage
 func New(tblName, path string) (*Storage, error) {
-	db, err := sql.Open(driver, path+"_" + tblName + ".db")
+	db, err := sql.Open(driver, path+"_"+tblName+".db")
 	if err != nil {
 		return nil, err
 	}

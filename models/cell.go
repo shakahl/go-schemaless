@@ -20,7 +20,7 @@ package models
 //
 type Cell struct {
 	Type       string `json:",omitempty"`
-	AddedAt    int64 `json:",omitempty"`
+	AddedAt    int64  `json:",omitempty"`
 	RowKey     string `json:",omitempty"` // UUID, typically, but could be anything
 	ColumnName string `json:",omitempty"` // The actual column name for the individual Body blob
 	RefKey     int64  `json:",omitempty"` // for versioning or sorting cells in a list
