@@ -8,6 +8,7 @@ type StatusResponse struct {
 }
 
 type PutRequest struct {
+	Store     string `json:"store"`
 	Table     string `json:"table"`
 	RowKey    string `json:"rowKey"`
 	ColumnKey string `json:"columnKey"`
@@ -21,6 +22,7 @@ type PutResponse struct {
 }
 
 type GetRequest struct {
+	Store     string `json:"store"`
 	Table     string `json:"table"`
 	RowKey    string `json:"rowKey"`
 	ColumnKey string `json:"columnKey"`
@@ -36,6 +38,7 @@ type GetResponse struct {
 }
 
 type GetLatestRequest struct {
+	Store     string `json:"store"`
 	Table     string `json:"table"`
 	RowKey    string `json:"rowKey"`
 	ColumnKey string `json:"columnKey"`
@@ -50,6 +53,7 @@ type GetLatestResponse struct {
 }
 
 type PartitionReadRequest struct {
+	Store           string `json:"store"`
 	Table           string `json:"table"`
 	PartitionNumber int    `json:"partitionNumber"`
 	Location        string `json:"location"`

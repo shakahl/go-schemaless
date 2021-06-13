@@ -14,6 +14,7 @@ import (
 
 const (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere? 
+	storeName     = "trips"
 	tblName       = "cell"
 	baseCol       = "BASE"
 	otherCellID   = "hello"
@@ -24,17 +25,17 @@ const (
 
 func runPuts(cl *client.Client) string {
 	cellID := uuid.Must(uuid.NewV4()).String()
-	_, err := cl.Put(context.TODO(), tblName, cellID, baseCol, 1, testString)
+	_, err := cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testString)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = cl.Put(context.TODO(), tblName, cellID, baseCol, 2, testString2)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testString2)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = cl.Put(context.TODO(), tblName, cellID, baseCol, 3, testString3)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testString3)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +52,7 @@ func main() {
 
 	ctx := context.TODO()
 
-	v, ok, err := cl.Get(ctx, tblName, otherCellID, baseCol, 1)
+	v, ok, err := cl.Get(ctx, storeName, tblName, otherCellID, baseCol, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +62,7 @@ func main() {
 
 	cellID := runPuts(cl)
 
-	v, ok, err = cl.GetLatest(ctx, tblName, cellID, baseCol)
+	v, ok, err = cl.GetLatest(ctx, storeName, tblName, cellID, baseCol)
 	if err != nil {
 		panic(err)
 	}
@@ -69,7 +70,7 @@ func main() {
 		panic(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
 	}
 
-	v, ok, err = cl.Get(ctx, tblName, cellID, baseCol, 1)
+	v, ok, err = cl.Get(ctx, storeName, tblName, cellID, baseCol, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +79,7 @@ func main() {
 	}
 
 	var cells []models.Cell
-	cells, ok, err = cl.PartitionRead(ctx, tblName, 0, "timestamp", startTime, 5)
+	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, 0, "timestamp", startTime, 5)
 	if err != nil {
 		panic(err)
 	}

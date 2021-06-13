@@ -33,15 +33,27 @@ func (hs *HTTPAPI) jsonPartitionReadHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	var resp api.PartitionReadResponse
-	resp.Success = true
 
 	var cells []models.Cell
 	var found bool
 
-	cells, found, err = hs.kv.PartitionRead(context.TODO(), request.Table, request.PartitionNumber, request.Location, request.Value, request.Limit)
+	if request.Store == "" {
+		resp.Error = ErrMissingStore.Error()
+	}
+
+	store, err := hs.getStore(request.Store)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
+	} else {
+		resp.Success = true
+
+		cells, found, err = store.PartitionRead(context.TODO(), request.Table, request.PartitionNumber, request.Location, request.Value, request.Limit)
+		if err != nil {
+			resp.Success = false
+			resp.Error = err.Error()
+		}
+
 	}
 
 	resp.Cells = cells

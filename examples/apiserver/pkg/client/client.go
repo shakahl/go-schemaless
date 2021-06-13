@@ -29,12 +29,13 @@ func (c *Client) WithAddress(addr string) *Client {
 	return c
 }
 
-func (c *Client) Get(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (c *Client) Get(ctx context.Context, storeName, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/get"
 
 	// TODO: make the context part of the request
 
 	var getRequest api.GetRequest
+	getRequest.Store = storeName
 	getRequest.Table = tblName
 	getRequest.RowKey = rowKey
 	getRequest.ColumnKey = columnKey
@@ -76,10 +77,11 @@ func (c *Client) Get(ctx context.Context, tblName string, rowKey string, columnK
 	return gr.Cell, gr.Found, nil
 }
 
-func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
+func (c *Client) GetLatest(ctx context.Context, storeName, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/getLatest"
 
 	var getLatestRequest api.GetRequest
+	getLatestRequest.Store = storeName
 	getLatestRequest.Table = tblName
 	getLatestRequest.RowKey = rowKey
 	getLatestRequest.ColumnKey = columnKey
@@ -121,12 +123,13 @@ func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, c
 	return glr.Cell, glr.Found, nil
 }
 
-func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/partitionRead"
 
 	// TODO: add context
 
 	var partitionReadRequest api.PartitionReadRequest
+	partitionReadRequest.Store = storeName
 	partitionReadRequest.Table = tblName
 	partitionReadRequest.PartitionNumber = partitionNumber
 	partitionReadRequest.Location = location
@@ -170,12 +173,13 @@ func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNum
 	return prr.Cells, prr.Found, nil
 }
 
-func (c *Client) Put(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64, body string) (*api.PutResponse, error) {
+func (c *Client) Put(ctx context.Context, storeName, tblName, rowKey, columnKey string, refKey int64, body string) (*api.PutResponse, error) {
 	postURL := c.Address + "/api/put"
 
 	// TODO: make the context part of the request
 
 	var putRequest api.PutRequest
+	putRequest.Store = storeName
 	putRequest.Table = tblName
 	putRequest.RowKey = rowKey
 	putRequest.ColumnKey = columnKey

@@ -10,6 +10,7 @@ import (
 	"github.com/tidwall/sjson"
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/models"
 )
 
 func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,15 +37,32 @@ func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) 
 
 	var resp api.GetLatestResponse
 
-	cell, found, err := hs.kv.GetLatest(context.TODO(), request.Table, request.RowKey, request.ColumnKey)
+	if request.Store == "" {
+		resp.Error = ErrMissingStore.Error()
+	}
+
+	store, err := hs.getStore(request.Store)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
-		resp.Found = false
-	} else {
-		resp.Success = true
-		resp.Cell = cell
-		resp.Found = found
+	}
+
+	var cell models.Cell
+	var found bool
+
+	if resp.Error == "" {
+
+		cell, found, err = store.GetLatest(context.TODO(), request.Table, request.RowKey, request.ColumnKey)
+		if err != nil {
+			resp.Success = false
+			resp.Error = err.Error()
+			resp.Found = false
+		} else {
+			resp.Success = true
+			resp.Cell = cell
+			resp.Found = found
+		}
+
 	}
 
 	cellText, err := json.Marshal(cell)

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -45,7 +46,7 @@ type HTTPAPI struct {
 	hs *http.Server
 	l  *zap.Logger
 
-	kv *schemaless.DataStore
+	Stores map[string]*schemaless.DataStore
 
 	shardConfig *config.ShardConfig
 }
@@ -158,30 +159,47 @@ func (hs *HTTPAPI) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hs *HTTPAPI) loadShards() error {
-	label := hs.shardConfig.Shards[0].Label
 	driver := hs.shardConfig.Driver
 
-	switch driver {
-	case "sqlite3":
-		shards, err := hs.getSqliteShards(label)
-		if err != nil {
-			return err
+	hs.Stores = make(map[string]*schemaless.DataStore)
+
+	for _, datastore := range hs.shardConfig.Datastores {
+		label := datastore.Name
+
+		switch driver {
+		case "sqlite3":
+			shards, err := hs.getSqliteShards(label, &datastore)
+			if err != nil {
+				return err
+			}
+
+			if _, ok := hs.Stores[datastore.Name]; !ok {
+				hs.Stores[datastore.Name] = schemaless.New().WithSource(shards)
+			}
+		default:
+			return fmt.Errorf("unrecognized driver: %s", driver)
 		}
-		hs.kv = schemaless.New().WithSource(shards)
-	default:
-		return fmt.Errorf("unrecognized driver: %s", driver)
 	}
 
 	return nil
 }
 
-func (hs *HTTPAPI) getSqliteShards(prefix string) ([]core.Shard, error) {
+func (hs *HTTPAPI) getStore(storeName string) (*schemaless.DataStore, error) {
+	store, ok := hs.Stores[storeName]
+	if !ok {
+		return nil, errors.New("store not found")
+	}
+
+	return store, nil
+}
+
+func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
 	var shards []core.Shard
-	nShards := len(hs.shardConfig.Shards)
+	nShards := len(datastore.Shards)
 
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
-		// NOTE: sqlite implementation supports only a single table per shard created at start time 
+		// NOTE: sqlite implementation supports only a single table per shard created at start time
 		st, err := st.New("cell", label)
 		if err != nil {
 			return nil, err

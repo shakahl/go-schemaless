@@ -14,7 +14,12 @@ type Shard struct {
 }
 
 type ShardConfig struct {
-	Driver string  `json:"driver"`
+	Driver     string            `json:"driver"`
+	Datastores []DatastoreConfig `json:"datastores"`
+}
+
+type DatastoreConfig struct {
+	Name   string  `json:"name"`
 	Shards []Shard `json:"shards"`
 }
 
