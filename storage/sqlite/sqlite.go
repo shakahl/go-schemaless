@@ -166,9 +166,8 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 	return cell, found, nil
 }
 
-
-func (s *Storage) FindPartition(rowKey string) (int, error) {
-	return 0, ErrNotAtStorageLevel
+func (s *Storage) FindPartition(rowKey string) int {
+	panic("FindPartition not implemented at storage level")
 }
 
 func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {

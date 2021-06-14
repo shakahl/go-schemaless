@@ -22,7 +22,7 @@ type Storage interface {
 	Put(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64, body string) (err error)
 
 	// FindPartition returns the partition number for a specific rowKey
-	FindPartition(rowKey string) (int, error)
+	FindPartition(rowKey string) int
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -48,7 +48,7 @@ type Chooser interface {
 	// SetBuckets sets the list of known buckets from which the chooser should select
 	SetBuckets([]string) error
 	// Choose returns a bucket for a given key
-	Choose(key string) (string, int)
+	Choose(key string) string
 	// Buckets returns the list of known buckets
 	Buckets() []string
 }
@@ -65,7 +65,7 @@ func New(chooser Chooser, shards []Shard) *KVStore {
 	kv := &KVStore{
 		continuum: chooser,
 		storages:  make(map[string]Storage),
-		// what about migration?
+		// migration is initialized separately by calling BeginMigration
 	}
 	for _, shard := range shards {
 		buckets = append(buckets, shard.Name)
@@ -83,7 +83,7 @@ func (kv *KVStore) Get(ctx context.Context, tblName, rowKey, columnKey string, r
 	defer kv.mu.Unlock()
 
 	if kv.migration != nil {
-		shard, _ := kv.migration.Choose(rowKey)
+		shard := kv.migration.Choose(rowKey)
 		migStorage = kv.mstorages[shard]
 		if migStorage != nil {
 			val, ok, err := migStorage.Get(ctx, tblName, rowKey, columnKey, refKey)
@@ -96,7 +96,7 @@ func (kv *KVStore) Get(ctx context.Context, tblName, rowKey, columnKey string, r
 		}
 	}
 
-	shard, _ := kv.continuum.Choose(rowKey)
+	shard := kv.continuum.Choose(rowKey)
 	storage = kv.storages[shard]
 
 	return storage.Get(ctx, tblName, rowKey, columnKey, refKey)
@@ -107,7 +107,7 @@ func (kv *KVStore) GetLatest(ctx context.Context, tblName, rowKey, columnKey str
 	defer kv.mu.Unlock()
 
 	if kv.migration != nil {
-		shard, _ := kv.migration.Choose(rowKey)
+		shard := kv.migration.Choose(rowKey)
 		migStorage := kv.mstorages[shard]
 
 		if migStorage != nil {
@@ -121,7 +121,7 @@ func (kv *KVStore) GetLatest(ctx context.Context, tblName, rowKey, columnKey str
 		}
 	}
 
-	shard, _ := kv.continuum.Choose(rowKey)
+	shard := kv.continuum.Choose(rowKey)
 	storage := kv.storages[shard]
 	return storage.GetLatest(ctx, tblName, rowKey, columnKey)
 }
@@ -131,14 +131,14 @@ func (kv *KVStore) Put(ctx context.Context, tblName, rowKey, columnKey string, r
 	defer kv.mu.Unlock()
 
 	if kv.migration != nil {
-		shard, _ := kv.migration.Choose(rowKey)
+		shard := kv.migration.Choose(rowKey)
 		storage := kv.mstorages[shard]
 		if storage != nil {
 			return storage.Put(ctx, tblName, rowKey, columnKey, refKey, body)
 		}
 	}
 
-	shard, _ := kv.continuum.Choose(rowKey)
+	shard := kv.continuum.Choose(rowKey)
 	storage := kv.storages[shard]
 	return storage.Put(ctx, tblName, rowKey, columnKey, refKey, body)
 }
@@ -148,7 +148,12 @@ func (kv *KVStore) FindPartition(rowKey string) (int, error) {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
-	_, shardNum := kv.continuum.Choose(rowKey)
+	shard := kv.continuum.Choose(rowKey)
+
+	panic(shard)
+
+	shardNum := 0
+
 	return shardNum, nil
 }
 
@@ -179,7 +184,7 @@ func (kv *KVStore) ResetConnection(ctx context.Context, key string) error {
 	defer kv.mu.Unlock()
 
 	if kv.migration != nil {
-		shard, _ := kv.migration.Choose(key)
+		shard := kv.migration.Choose(key)
 		migStorage := kv.mstorages[shard]
 
 		if migStorage != nil {
@@ -190,7 +195,7 @@ func (kv *KVStore) ResetConnection(ctx context.Context, key string) error {
 		}
 	}
 
-	shard, _ := kv.continuum.Choose(key)
+	shard := kv.continuum.Choose(key)
 	storage := kv.storages[shard]
 	return storage.ResetConnection(ctx, key)
 }

@@ -2,7 +2,6 @@ package schemaless
 
 import (
 	"context"
-	"sync"
 
 	"github.com/dgryski/go-metro"
 	jh "github.com/dgryski/go-shardedkv/choosers/jump"
@@ -25,7 +24,7 @@ type Storage interface {
 	Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error)
 
 	// FindPartition returns the partition number for a specific rowKey
-	FindPartition(rowKey string) (int, error)
+	FindPartition(rowKey string) int
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -38,9 +37,8 @@ type Storage interface {
 // KVStore.
 type DataStore struct {
 	source *core.KVStore
-	// we avoid holding the lock during a call to a storage engine, which
-	// may block
-	mu sync.Mutex
+	// no mutex is required at this level -- only in core
+	// mu sync.Mutex
 }
 
 // Chooser maps keys to shards
