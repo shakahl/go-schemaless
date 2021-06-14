@@ -2,11 +2,12 @@ package schemaless
 
 import (
 	"context"
+	"sync"
+
 	"github.com/dgryski/go-metro"
 	jh "github.com/dgryski/go-shardedkv/choosers/jump"
 	"github.com/rbastic/go-schemaless/core"
 	"github.com/rbastic/go-schemaless/models"
-	"sync"
 )
 
 // Storage is a key-value storage backend
@@ -22,6 +23,9 @@ type Storage interface {
 
 	// Put inits a cell with given row key, column key, and ref key
 	Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error)
+
+	// FindPartition returns the partition number for a specific rowKey
+	FindPartition(rowKey string) (int, error)
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error

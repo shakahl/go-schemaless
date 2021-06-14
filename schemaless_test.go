@@ -2,12 +2,13 @@ package schemaless
 
 import (
 	"context"
-	"github.com/rbastic/go-schemaless/core"
-	st "github.com/rbastic/go-schemaless/storage/sqlite"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/rbastic/go-schemaless/core"
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
 const tblName = "cell"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/client"
 	"github.com/rbastic/go-schemaless/models"
@@ -25,7 +25,8 @@ const (
 )
 
 func runPuts(cl *client.Client) string {
-	cellID := uuid.Must(uuid.NewV4()).String()
+	cellID := uuid.New().String()
+	//cellID := "981a6b8c-629b-4d30-98c2-bc4816e7157a"
 	_, err := cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testString)
 	if err != nil {
 		panic(err)
@@ -94,8 +95,19 @@ func main() {
 		panic(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
+	findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
+	if err != nil {
+		panic(err)
+	}
+	if findPartResponse.Error != "" {
+		panic(findPartResponse.Error)
+	}
+
+	partNo := findPartResponse.PartitionNumber
+
 	var cells []models.Cell
-	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, 0, "timestamp", startTime, 5)
+	fmt.Printf("partNo:%d\n", partNo)
+	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
 		panic(err)
 	}

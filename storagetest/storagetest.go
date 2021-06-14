@@ -2,11 +2,12 @@ package storagetest
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/gofrs/uuid"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
-	"testing"
-	"time"
 )
 
 const (
@@ -74,8 +75,10 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok)
 	}
 
+	partNo := 0
+
 	var cells []models.Cell
-	cells, ok, err = storage.PartitionRead(ctx, tblName, 0, "timestamp", startTime, 5)
+	cells, ok, err = storage.PartitionRead(ctx, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
 		t.Fatal(err)
 	}

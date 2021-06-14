@@ -174,6 +174,51 @@ func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, p
 	return prr.Cells, prr.Found, nil
 }
 
+func (c *Client) FindPartition(storeName, tblName, rowKey string) (*api.FindPartitionResponse, error) {
+	postURL := c.Address + "/api/put"
+
+	var findRequest api.FindPartitionRequest
+	findRequest.Store = storeName
+	findRequest.Table = tblName
+	findRequest.RowKey = rowKey
+
+	findRequestMarshal, err := json.Marshal(findRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest("POST", postURL, bytes.NewBuffer(findRequestMarshal))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", contentTypeJSON)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	var responseBody []byte
+	responseBody, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	fpr := new(api.FindPartitionResponse)
+	err = json.Unmarshal(responseBody, fpr)
+	if err != nil {
+		return nil, err
+	}
+
+	if fpr.Error != "" {
+		return nil, errors.New(fpr.Error)
+	}
+
+	return fpr, err
+}
+
 func (c *Client) Put(ctx context.Context, storeName, tblName, rowKey, columnKey string, refKey int64, body string) (*api.PutResponse, error) {
 	postURL := c.Address + "/api/put"
 
@@ -189,7 +234,7 @@ func (c *Client) Put(ctx context.Context, storeName, tblName, rowKey, columnKey 
 
 	putRequestMarshal, err := json.Marshal(putRequest)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	request, err := http.NewRequest("POST", postURL, bytes.NewBuffer(putRequestMarshal))

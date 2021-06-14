@@ -5,11 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
-	"time"
 )
+
+// ErrNotAtStorageLevel marks methods that are not to be called at storage level
+var ErrNotAtStorageLevel = errors.New("not implemented at storage level")
 
 type Storage struct {
 	store *sql.DB
@@ -160,6 +164,11 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 	}
 
 	return cell, found, nil
+}
+
+
+func (s *Storage) FindPartition(rowKey string) (int, error) {
+	return 0, ErrNotAtStorageLevel
 }
 
 func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {

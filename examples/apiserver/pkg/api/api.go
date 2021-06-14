@@ -2,11 +2,13 @@ package api
 
 import "github.com/rbastic/go-schemaless/models"
 
+// StatusResponse contains a simplified health response.
 type StatusResponse struct {
 	Error   string `json:"error,omitempty"`
 	Success bool   `json:"success"`
 }
 
+// PutRequest is for issuing Put() calls to the Schemaless data store
 type PutRequest struct {
 	Store     string `json:"store"`
 	Table     string `json:"table"`
@@ -16,6 +18,7 @@ type PutRequest struct {
 	Body      string `json:"body"`
 }
 
+// PutResponse specifies the response for a Put operation
 type PutResponse struct {
 	Error   string `json:"error,omitempty"`
 	Success bool   `json:"success"`
@@ -67,4 +70,18 @@ type PartitionReadResponse struct {
 	Found   bool   `json:"found"`
 
 	Cells []models.Cell `json:"cells"`
+}
+
+type FindPartitionRequest struct {
+	Store  string `json:"store"`
+	Table  string `json:"table"`
+	RowKey string `json:"rowKey"`
+}
+
+type FindPartitionResponse struct {
+	PartitionNumber int `json:"partitionNumber"`
+
+	Error   string `json:"error,omitempty"`
+	Success bool   `json:"success"`
+	Found   bool   `json:"found"`
 }
