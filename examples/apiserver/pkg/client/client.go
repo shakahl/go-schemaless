@@ -175,7 +175,7 @@ func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, p
 }
 
 func (c *Client) FindPartition(storeName, tblName, rowKey string) (*api.FindPartitionResponse, error) {
-	postURL := c.Address + "/api/put"
+	postURL := c.Address + "/api/findPartition"
 
 	var findRequest api.FindPartitionRequest
 	findRequest.Store = storeName

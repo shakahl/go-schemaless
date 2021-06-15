@@ -2,6 +2,9 @@ package core
 
 import (
 	"context"
+	"errors"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/rbastic/go-schemaless/models"
@@ -39,6 +42,8 @@ type KVStore struct {
 	migration Chooser
 	mstorages map[string]Storage
 
+	name string
+
 	// we avoid holding the lock during a call to a storage engine, which may block
 	mu sync.Mutex
 }
@@ -72,6 +77,11 @@ func New(chooser Chooser, shards []Shard) *KVStore {
 		kv.AddShard(shard.Name, shard.Backend)
 	}
 	chooser.SetBuckets(buckets)
+	return kv
+}
+
+func (kv *KVStore) WithName(name string) *KVStore {
+	kv.name = name
 	return kv
 }
 
@@ -150,10 +160,14 @@ func (kv *KVStore) FindPartition(rowKey string) (int, error) {
 
 	shard := kv.continuum.Choose(rowKey)
 
-	panic(shard)
+	if kv.name == "" {
+		return -1, errors.New("kvstore has empty name")
+	}
 
-	shardNum := 0
-
+	shardNum, err := strconv.Atoi(strings.TrimPrefix(shard, kv.name))
+	if err != nil {
+		return -1, err
+	}
 	return shardNum, nil
 }
 

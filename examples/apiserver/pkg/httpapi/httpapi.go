@@ -119,6 +119,7 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 		r.Post("/get", hs.jsonGetHandler)
 		r.Post("/getLatest", hs.jsonGetLatestHandler)
 		r.Post("/partitionRead", hs.jsonPartitionReadHandler)
+		r.Post("/findPartition", hs.jsonFindPartitionHandler)
 	})
 
 	server := &http.Server{
@@ -174,7 +175,7 @@ func (hs *HTTPAPI) loadShards() error {
 			}
 
 			if _, ok := hs.Stores[datastore.Name]; !ok {
-				hs.Stores[datastore.Name] = schemaless.New().WithSource(shards)
+				hs.Stores[datastore.Name] = schemaless.New().WithSource(shards).WithSourceName(label)
 			}
 		default:
 			return fmt.Errorf("unrecognized driver: %s", driver)

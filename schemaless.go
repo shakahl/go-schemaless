@@ -24,7 +24,7 @@ type Storage interface {
 	Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error)
 
 	// FindPartition returns the partition number for a specific rowKey
-	FindPartition(rowKey string) int
+	FindPartition(tblName, rowKey string) int
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -67,6 +67,11 @@ func (ds *DataStore) WithSource(shards []core.Shard) *DataStore {
 	return ds
 }
 
+func (ds *DataStore) WithSourceName(name string) *DataStore {
+	ds.source = ds.source.WithName(name)
+	return ds
+}
+
 // New is an empty constructor for DataStore.
 func New() *DataStore {
 	return &DataStore{}
@@ -90,6 +95,11 @@ func (ds *DataStore) PartitionRead(ctx context.Context, tblName string, partitio
 // Put implements Storage.Put()
 func (ds *DataStore) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) error {
 	return ds.source.Put(ctx, tblName, rowKey, columnKey, refKey, body)
+}
+
+// FindPartition implements Storage.FindPartition()
+func (ds *DataStore) FindPartition(tblName, rowKey string) (int, error) {
+	return ds.source.FindPartition(rowKey)
 }
 
 // ResetConnection implements Storage.ResetConnection()

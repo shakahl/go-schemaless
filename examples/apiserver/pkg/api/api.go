@@ -83,5 +83,4 @@ type FindPartitionResponse struct {
 
 	Error   string `json:"error,omitempty"`
 	Success bool   `json:"success"`
-	Found   bool   `json:"found"`
 }
