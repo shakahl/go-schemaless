@@ -23,7 +23,7 @@ type Storage struct {
 const (
 	driver = "sqlite3"
 
-	createTableSQL      = "CREATE TABLE %s ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at INTEGER DEFAULT 0)"
+	createTableSQL      = "CREATE TABLE %s IF NOT EXISTS ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at INTEGER DEFAULT 0)"
 	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniq%s_idx ON %s ( row_key, column_name, ref_key )"
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
