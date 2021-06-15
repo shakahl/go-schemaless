@@ -2,21 +2,22 @@ package storagetest
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/gofrs/uuid"
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/models"
-	"testing"
-	"time"
 )
 
 const (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere? Likely.
-	tblName = "cell"
-	baseCol     = "BASE"
-	otherCellID = "hello"
-	testString  = "{\"value\": \"The shaved yak drank from the bitter well\"}"
-	testString2 = "{\"value\": \"The printer is on fire\"}"
-	testString3 = "{\"value\": \"The appropriate printer-fire-response-team has been notified\"}"
+	tblName       = "cell"
+	baseCol       = "BASE"
+	otherCellID   = "hello"
+	testString    = "{\"value\": \"The shaved yak drank from the bitter well\"}"
+	testString2   = "{\"value\": \"The printer is on fire\"}"
+	testString3   = "{\"value\": \"The appropriate printer-fire-response-team has been notified\"}"
 )
 
 func runPuts(t *testing.T, storage schemaless.Storage) string {
@@ -41,7 +42,7 @@ func runPuts(t *testing.T, storage schemaless.Storage) string {
 
 // StorageTest is a simple sanity check for a schemaless Storage backend
 func StorageTest(t *testing.T, storage schemaless.Storage) {
-	startTime := uint64(time.Now().UTC().UnixNano())
+	startTime := time.Now().UTC().UnixNano()
 
 	time.Sleep(time.Second * 1)
 
@@ -74,8 +75,10 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Errorf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok)
 	}
 
+	partNo := 0
+
 	var cells []models.Cell
-	cells, ok, err = storage.PartitionRead(ctx, tblName, 0, "timestamp", startTime, 5)
+	cells, ok, err = storage.PartitionRead(ctx, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +90,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Fatal("we have an obvious problem")
 	}
 
-	err = storage.ResetConnection(ctx, otherCellID)
+	err = storage.ResetConnection(ctx, tblName)
 	if err != nil {
 		t.Errorf("failed resetting connection for key: err=%v\n", err)
 	}

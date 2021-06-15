@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/client"
 	"github.com/rbastic/go-schemaless/models"
 )
@@ -13,8 +14,9 @@ import (
 // see storagetest/storagetest.go - that code is mostly a copy of this.
 
 const (
-	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere? 
-	tblName       = "cell"
+	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere?
+	storeName     = "trips"
+	tblName       = "trips"
 	baseCol       = "BASE"
 	otherCellID   = "hello"
 	testString    = "{\"value\": \"The shaved yak drank from the bitter well\"}"
@@ -23,18 +25,19 @@ const (
 )
 
 func runPuts(cl *client.Client) string {
-	cellID := uuid.Must(uuid.NewV4()).String()
-	_, err := cl.Put(context.TODO(), tblName, cellID, baseCol, 1, testString)
+	cellID := uuid.New().String()
+	//cellID := "981a6b8c-629b-4d30-98c2-bc4816e7157a"
+	_, err := cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testString)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = cl.Put(context.TODO(), tblName, cellID, baseCol, 2, testString2)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testString2)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = cl.Put(context.TODO(), tblName, cellID, baseCol, 3, testString3)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testString3)
 	if err != nil {
 		panic(err)
 	}
@@ -42,16 +45,29 @@ func runPuts(cl *client.Client) string {
 	return cellID
 }
 
+type Specification struct {
+	StartTime int64
+}
+
 func main() {
+	var s Specification
+	err := envconfig.Process("app", &s)
+	if err != nil {
+		panic(err)
+	}
+
 	cl := client.New().WithAddress("http://localhost:4444")
 
-	startTime := uint64(time.Now().UTC().UnixNano())
+	startTime := time.Now().UTC().UnixNano()
+	if s.StartTime != 0 {
+		startTime = s.StartTime
+	}
 
-	time.Sleep(time.Second * 1)
+	fmt.Printf("startTime: %d\n", startTime)
 
 	ctx := context.TODO()
 
-	v, ok, err := cl.Get(ctx, tblName, otherCellID, baseCol, 1)
+	v, ok, err := cl.Get(ctx, storeName, tblName, otherCellID, baseCol, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +77,9 @@ func main() {
 
 	cellID := runPuts(cl)
 
-	v, ok, err = cl.GetLatest(ctx, tblName, cellID, baseCol)
+	time.Sleep(1 * time.Second)
+
+	v, ok, err = cl.GetLatest(ctx, storeName, tblName, cellID, baseCol)
 	if err != nil {
 		panic(err)
 	}
@@ -69,7 +87,7 @@ func main() {
 		panic(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
 	}
 
-	v, ok, err = cl.Get(ctx, tblName, cellID, baseCol, 1)
+	v, ok, err = cl.Get(ctx, storeName, tblName, cellID, baseCol, 1)
 	if err != nil {
 		panic(err)
 	}
@@ -77,8 +95,19 @@ func main() {
 		panic(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
+	findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
+	if err != nil {
+		panic(err)
+	}
+	if findPartResponse.Error != "" {
+		panic(findPartResponse.Error)
+	}
+
+	partNo := findPartResponse.PartitionNumber
+
 	var cells []models.Cell
-	cells, ok, err = cl.PartitionRead(ctx, tblName, 0, "timestamp", startTime, 5)
+	fmt.Printf("partNo:%d\n", partNo)
+	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
 		panic(err)
 	}
@@ -90,4 +119,5 @@ func main() {
 		panic("we have an obvious problem")
 	}
 
+	fmt.Printf("cells: %+v\n", cells)
 }

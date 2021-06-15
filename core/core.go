@@ -2,8 +2,12 @@ package core
 
 import (
 	"context"
-	"github.com/rbastic/go-schemaless/models"
+	"errors"
+	"strconv"
+	"strings"
 	"sync"
+
+	"github.com/rbastic/go-schemaless/models"
 )
 
 // Storage is a key-value storage backend
@@ -15,10 +19,13 @@ type Storage interface {
 	GetLatest(ctx context.Context, tblName string, rowKey string, columnKey string) (cell models.Cell, found bool, err error)
 
 	// PartitionRead returns 'limit' cells after 'location' from shard 'shard_no'
-	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error)
+	PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error)
 
 	// Put inits a cell with given row key, column key, and ref key
 	Put(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64, body string) (err error)
+
+	// FindPartition returns the partition number for a specific rowKey
+	FindPartition(tblName, rowKey string) int
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -34,6 +41,8 @@ type KVStore struct {
 
 	migration Chooser
 	mstorages map[string]Storage
+
+	name string
 
 	// we avoid holding the lock during a call to a storage engine, which may block
 	mu sync.Mutex
@@ -61,13 +70,18 @@ func New(chooser Chooser, shards []Shard) *KVStore {
 	kv := &KVStore{
 		continuum: chooser,
 		storages:  make(map[string]Storage),
-		// what about migration?
+		// migration is initialized separately by calling BeginMigration
 	}
 	for _, shard := range shards {
 		buckets = append(buckets, shard.Name)
 		kv.AddShard(shard.Name, shard.Backend)
 	}
 	chooser.SetBuckets(buckets)
+	return kv
+}
+
+func (kv *KVStore) WithName(name string) *KVStore {
+	kv.name = name
 	return kv
 }
 
@@ -139,7 +153,25 @@ func (kv *KVStore) Put(ctx context.Context, tblName, rowKey, columnKey string, r
 	return storage.Put(ctx, tblName, rowKey, columnKey, refKey, body)
 }
 
-func (kv *KVStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (kv *KVStore) FindPartition(tblName, rowKey string) (int, error) {
+
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	shard := kv.continuum.Choose(rowKey)
+
+	if kv.name == "" {
+		return -1, errors.New("kvstore has empty name")
+	}
+
+	shardNum, err := strconv.Atoi(strings.TrimPrefix(shard, kv.name))
+	if err != nil {
+		return -1, err
+	}
+	return shardNum, nil
+}
+
+func (kv *KVStore) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {
 
 	kv.mu.Lock()
 	defer kv.mu.Unlock()

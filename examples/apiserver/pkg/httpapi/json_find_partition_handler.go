@@ -1,21 +1,17 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/tidwall/sjson"
-
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
-	"github.com/rbastic/go-schemaless/models"
 )
 
-func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) {
+func (hs *HTTPAPI) jsonFindPartitionHandler(w http.ResponseWriter, r *http.Request) {
 
-	var request api.GetLatestRequest
+	var request api.FindPartitionRequest
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		hs.writeError(hs.l, w, err)
@@ -35,7 +31,7 @@ func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	var resp api.GetLatestResponse
+	var resp api.FindPartitionResponse
 
 	if request.Store == "" {
 		resp.Error = ErrMissingStore.Error()
@@ -47,28 +43,16 @@ func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) 
 		resp.Error = err.Error()
 	}
 
-	var cell models.Cell
-	var found bool
-
 	if resp.Error == "" {
-
-		cell, found, err = store.GetLatest(context.TODO(), request.Table, request.RowKey, request.ColumnKey)
+		response, err := store.FindPartition(request.Table, request.RowKey)
 		if err != nil {
 			resp.Success = false
 			resp.Error = err.Error()
-			resp.Found = false
 		} else {
+			resp.PartitionNumber = response
 			resp.Success = true
-			resp.Cell = cell
-			resp.Found = found
 		}
 
-	}
-
-	cellText, err := json.Marshal(cell)
-	if err != nil {
-		hs.writeError(hs.l, w, err)
-		return
 	}
 
 	respBytes, err := json.Marshal(resp)
@@ -77,16 +61,10 @@ func (hs *HTTPAPI) jsonGetLatestHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	respText, err := sjson.SetRaw(string(respBytes), "cell", string(cellText))
-	if err != nil {
-		hs.writeError(hs.l, w, err)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	_, err = w.Write([]byte(respText))
+	_, err = w.Write(respBytes)
 	if err != nil {
 		hs.writeError(hs.l, w, err)
 		return

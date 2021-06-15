@@ -3,12 +3,15 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 )
+
+var ErrMissingStore = errors.New("store not specified in request")
 
 func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -31,14 +34,25 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
 	var resp api.PutResponse
 	resp.Success = true
 
-	err = hs.kv.Put(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+	if request.Store == "" {
+		resp.Error = ErrMissingStore.Error()
+	}
+
+	store, err := hs.getStore(request.Store)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
+	}
+
+	if resp.Error == "" {
+		err = store.Put(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey, request.Body)
+		if err != nil {
+			resp.Success = false
+			resp.Error = err.Error()
+		}
 	}
 
 	respText, err := json.Marshal(resp)

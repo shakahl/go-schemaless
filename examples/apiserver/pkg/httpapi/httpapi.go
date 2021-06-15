@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -45,7 +46,7 @@ type HTTPAPI struct {
 	hs *http.Server
 	l  *zap.Logger
 
-	kv *schemaless.DataStore
+	Stores map[string]*schemaless.DataStore
 
 	shardConfig *config.ShardConfig
 }
@@ -118,6 +119,7 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 		r.Post("/get", hs.jsonGetHandler)
 		r.Post("/getLatest", hs.jsonGetLatestHandler)
 		r.Post("/partitionRead", hs.jsonPartitionReadHandler)
+		r.Post("/findPartition", hs.jsonFindPartitionHandler)
 	})
 
 	server := &http.Server{
@@ -158,31 +160,60 @@ func (hs *HTTPAPI) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hs *HTTPAPI) loadShards() error {
-	label := hs.shardConfig.Shards[0].Label
 	driver := hs.shardConfig.Driver
 
-	switch driver {
-	case "sqlite3":
-		shards, err := hs.getSqliteShards(label)
-		if err != nil {
-			return err
+	hs.Stores = make(map[string]*schemaless.DataStore)
+
+	fmt.Println(hs.shardConfig)
+
+	for _, datastore := range hs.shardConfig.Datastores {
+		label := datastore.Name
+
+		switch driver {
+		case "sqlite3":
+			shards, err := hs.getSqliteShards(label, &datastore)
+			if err != nil {
+				return err
+			}
+
+			if _, ok := hs.Stores[datastore.Name]; !ok {
+				store, ok := hs.Stores[datastore.Name]
+				if !ok {
+					store = schemaless.New()
+				}
+				fmt.Printf("with sources name: %s datastore.Name %s\n", label, datastore.Name)
+				hs.Stores[datastore.Name] = store.WithSources(datastore.Name, shards).WithName(label, label)
+			}
+		default:
+			return fmt.Errorf("unrecognized driver: %s", driver)
 		}
-		hs.kv = schemaless.New().WithSource(shards)
-	default:
-		return fmt.Errorf("unrecognized driver: %s", driver)
 	}
 
 	return nil
 }
 
-func (hs *HTTPAPI) getSqliteShards(prefix string) ([]core.Shard, error) {
+func (hs *HTTPAPI) getStore(storeName string) (*schemaless.DataStore, error) {
+	store, ok := hs.Stores[storeName]
+	if !ok {
+		return nil, errors.New("store not found")
+	}
+
+	return store, nil
+}
+
+func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
 	var shards []core.Shard
-	nShards := len(hs.shardConfig.Shards)
+	nShards := len(datastore.Shards)
+
+	fmt.Printf("getSqliteShards datastore:%+v\n", datastore)
 
 	for i := 0; i < nShards; i++ {
+		shardTableName := datastore.Shards[i].Label
+
 		label := prefix + strconv.Itoa(i)
-		// NOTE: sqlite implementation supports only a single table per shard created at start time 
-		st, err := st.New("cell", label)
+		// NOTE: sqlite implementation supports only a single table per shard created at start time
+		fmt.Printf("getSqliteShards prefix:%s label:%s shardTableName:%s\n", prefix, label, shardTableName)
+		st, err := st.New(prefix, label)
 		if err != nil {
 			return nil, err
 		}

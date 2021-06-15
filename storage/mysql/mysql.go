@@ -94,12 +94,12 @@ func (s *Storage) WithDatabase(database string) *Storage {
 
 func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	var (
-		resAddedAt   uint64
+		resAddedAt   int64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt uint64
+		resCreatedAt int64
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
@@ -139,12 +139,12 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 
 func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	var (
-		resAddedAt   uint64
+		resAddedAt   int64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt uint64
+		resCreatedAt int64
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetLatest", "query before", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey)
@@ -181,15 +181,15 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 	return cell, found, nil
 }
 
-func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {
 
 	var (
-		resAddedAt   uint64
+		resAddedAt   int64
 		resRowKey    string
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt uint64
+		resCreatedAt int64
 
 		locationColumn string
 	)

@@ -12,6 +12,7 @@ import (
 
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 const contentTypeJSON = "application/json"
@@ -29,12 +30,13 @@ func (c *Client) WithAddress(addr string) *Client {
 	return c
 }
 
-func (c *Client) Get(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
+func (c *Client) Get(ctx context.Context, storeName, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/get"
 
 	// TODO: make the context part of the request
 
 	var getRequest api.GetRequest
+	getRequest.Store = storeName
 	getRequest.Table = tblName
 	getRequest.RowKey = rowKey
 	getRequest.ColumnKey = columnKey
@@ -76,10 +78,11 @@ func (c *Client) Get(ctx context.Context, tblName string, rowKey string, columnK
 	return gr.Cell, gr.Found, nil
 }
 
-func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, columnKey string) (cell models.Cell, found bool, err error) {
+func (c *Client) GetLatest(ctx context.Context, storeName, tblName, rowKey, columnKey string) (cell models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/getLatest"
 
 	var getLatestRequest api.GetRequest
+	getLatestRequest.Store = storeName
 	getLatestRequest.Table = tblName
 	getLatestRequest.RowKey = rowKey
 	getLatestRequest.ColumnKey = columnKey
@@ -121,16 +124,17 @@ func (c *Client) GetLatest(ctx context.Context, tblName string, rowKey string, c
 	return glr.Cell, glr.Found, nil
 }
 
-func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value uint64, limit int) (cells []models.Cell, found bool, err error) {
+func (c *Client) PartitionRead(ctx context.Context, storeName, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {
 	postURL := c.Address + "/api/partitionRead"
 
 	// TODO: add context
 
 	var partitionReadRequest api.PartitionReadRequest
+	partitionReadRequest.Store = storeName
 	partitionReadRequest.Table = tblName
 	partitionReadRequest.PartitionNumber = partitionNumber
 	partitionReadRequest.Location = location
-	partitionReadRequest.Value = value
+	partitionReadRequest.Value = strconv.FormatInt(value, 10)
 	partitionReadRequest.Limit = limit
 
 	partitionReadRequestMarshal, err := json.Marshal(partitionReadRequest)
@@ -170,12 +174,58 @@ func (c *Client) PartitionRead(ctx context.Context, tblName string, partitionNum
 	return prr.Cells, prr.Found, nil
 }
 
-func (c *Client) Put(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64, body string) (*api.PutResponse, error) {
+func (c *Client) FindPartition(storeName, tblName, rowKey string) (*api.FindPartitionResponse, error) {
+	postURL := c.Address + "/api/findPartition"
+
+	var findRequest api.FindPartitionRequest
+	findRequest.Store = storeName
+	findRequest.Table = tblName
+	findRequest.RowKey = rowKey
+
+	findRequestMarshal, err := json.Marshal(findRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequest("POST", postURL, bytes.NewBuffer(findRequestMarshal))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", contentTypeJSON)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	var responseBody []byte
+	responseBody, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	fpr := new(api.FindPartitionResponse)
+	err = json.Unmarshal(responseBody, fpr)
+	if err != nil {
+		return nil, err
+	}
+
+	if fpr.Error != "" {
+		return nil, errors.New(fpr.Error)
+	}
+
+	return fpr, err
+}
+
+func (c *Client) Put(ctx context.Context, storeName, tblName, rowKey, columnKey string, refKey int64, body string) (*api.PutResponse, error) {
 	postURL := c.Address + "/api/put"
 
 	// TODO: make the context part of the request
 
 	var putRequest api.PutRequest
+	putRequest.Store = storeName
 	putRequest.Table = tblName
 	putRequest.RowKey = rowKey
 	putRequest.ColumnKey = columnKey
@@ -184,7 +234,7 @@ func (c *Client) Put(ctx context.Context, tblName string, rowKey string, columnK
 
 	putRequestMarshal, err := json.Marshal(putRequest)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	request, err := http.NewRequest("POST", postURL, bytes.NewBuffer(putRequestMarshal))

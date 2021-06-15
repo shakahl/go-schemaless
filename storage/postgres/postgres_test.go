@@ -8,7 +8,6 @@ import (
 
 const defaultPort = 5432
 
-
 func TestPostgres(t *testing.T) {
 	user := os.Getenv("SQLUSER")
 	if user == "" {

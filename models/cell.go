@@ -20,12 +20,12 @@ package models
 //
 type Cell struct {
 	Type       string `json:",omitempty"`
-	AddedAt    uint64 `json:",omitempty"`
+	AddedAt    int64  `json:",omitempty"`
 	RowKey     string `json:",omitempty"` // UUID, typically, but could be anything
 	ColumnName string `json:",omitempty"` // The actual column name for the individual Body blob
 	RefKey     int64  `json:",omitempty"` // for versioning or sorting cells in a list
 	Body       string `json:",omitempty"` // Uber chose JSON inside MessagePack'd LZ4 blobs, we store raw JSON
-	CreatedAt  uint64 `json:",omitempty"`
+	CreatedAt  int64  `json:",omitempty"`
 }
 
 // NewCell constructs a Cell structure with the minimum parameters necessary:

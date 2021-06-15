@@ -2,12 +2,13 @@ package schemaless
 
 import (
 	"context"
-	"github.com/rbastic/go-schemaless/core"
-	st "github.com/rbastic/go-schemaless/storage/sqlite"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/rbastic/go-schemaless/core"
+	st "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
 const tblName = "cell"
@@ -22,7 +23,7 @@ func TestSchemaless(t *testing.T) {
 		dir, err := ioutil.TempDir(os.TempDir(), label)
 
 		if err != nil {
-			t.Skipf("Unable to create temporary directory: %s", err)
+			t.Skipf("Unable to create temporary directory: label:%s error:%s", label, err)
 		}
 
 		// TODO(rbastic): AddShard isn't used here?
@@ -33,12 +34,12 @@ func TestSchemaless(t *testing.T) {
 		shards = append(shards, core.Shard{Name: label, Backend: stor})
 	}
 
-	kv := New().WithSource(shards)
+	kv := New().WithSources(tblName, shards)
 	defer kv.Destroy(context.TODO())
 
 	for i := 1; i < nElements; i++ {
 		refKey := int64(i)
-		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value" + strconv.Itoa(i))
+		err := kv.Put(context.TODO(), tblName, "test"+strconv.Itoa(i), "BASE", refKey, "value"+strconv.Itoa(i))
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -38,14 +38,26 @@ func (hs *HTTPAPI) jsonGetHandler(w http.ResponseWriter, r *http.Request) {
 	var cell models.Cell
 	var found bool
 
-	cell, found, err = hs.kv.Get(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey)
+	if request.Store == "" {
+		resp.Error = ErrMissingStore.Error()
+	}
+
+	store, err := hs.getStore(request.Store)
 	if err != nil {
 		resp.Success = false
 		resp.Error = err.Error()
 	}
 
-	resp.Cell = cell
-	resp.Found = found
+	if resp.Error == "" {
+		cell, found, err = store.Get(context.TODO(), request.Table, request.RowKey, request.ColumnKey, request.RefKey)
+		if err != nil {
+			resp.Success = false
+			resp.Error = err.Error()
+		}
+
+		resp.Cell = cell
+		resp.Found = found
+	}
 
 	respText, err := json.Marshal(resp)
 	if err != nil {
