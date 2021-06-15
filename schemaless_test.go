@@ -23,7 +23,7 @@ func TestSchemaless(t *testing.T) {
 		dir, err := ioutil.TempDir(os.TempDir(), label)
 
 		if err != nil {
-			t.Skipf("Unable to create temporary directory: %s", err)
+			t.Skipf("Unable to create temporary directory: label:%s error:%s", label, err)
 		}
 
 		// TODO(rbastic): AddShard isn't used here?
@@ -34,7 +34,7 @@ func TestSchemaless(t *testing.T) {
 		shards = append(shards, core.Shard{Name: label, Backend: stor})
 	}
 
-	kv := New().WithSource(shards)
+	kv := New().WithSources(tblName, shards)
 	defer kv.Destroy(context.TODO())
 
 	for i := 1; i < nElements; i++ {

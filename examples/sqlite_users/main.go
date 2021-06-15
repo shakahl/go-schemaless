@@ -42,7 +42,7 @@ func main() {
 	fmt.Println("hello, multiple worlds!")
 
 	shards := getShards("user")
-	kv := schemaless.New().WithSource(shards)
+	kv := schemaless.New().WithSources("user", shards).WithName("user", "user")
 	defer kv.Destroy(context.TODO())
 
 	// We're going to demonstrate jump hash+metro hash with FS-backed SQLite
