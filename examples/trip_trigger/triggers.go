@@ -45,7 +45,7 @@ func getShards(prefix string) []core.Shard {
 
 func main() {
 	shards := getShards("trips")
-	sl := schemaless.New().WithSource(shards)
+	sl := schemaless.New().WithSources("trips", shards)
 
 	logger, err := zap.NewProduction()
 	if err != nil {

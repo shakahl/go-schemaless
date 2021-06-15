@@ -14,19 +14,19 @@ type Shard struct {
 }
 
 type Index struct {
-	Table string `json:"table"`
-	DataStore string `json:"datastore"`
+	Table      string      `json:"table"`
+	DataStore  string      `json:"datastore"`
 	ColumnDefs []ColumnDef `json:"column_defs"`
 }
 
 type ColumnDef struct {
-	ColumnKey string `json:"column_key"`
-	Fields []Field `json:"fields"`
+	ColumnKey string  `json:"column_key"`
+	Fields    []Field `json:"fields"`
 }
 
 type Field struct {
 	Field string `json:"field"`
-	Type string `json:"type"`
+	Type  string `json:"type"`
 }
 
 type ShardConfig struct {
