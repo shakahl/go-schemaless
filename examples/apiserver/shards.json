@@ -3,16 +3,16 @@
 	"datastores": [{
 		"shards": [
 			{
-				"label": "user"
+				"label": "cell"
 			},
 			{
-				"label": "user"
+				"label": "cell"
 			},
 			{
-				"label": "user"
+				"label": "cell"
 			},
 			{
-				"label": "user"
+				"label": "cell"
 			}
 		],
 		"name": "user"
@@ -20,16 +20,16 @@
 	{
 		"shards": [
 			{
-				"label": "trips"
+				"label": "cell"
 			},
 			{
-				"label": "trips"
+				"label": "cell"
 			},
 			{
-				"label": "trips"
+				"label": "cell"
 			},
 			{
-				"label": "trips"
+				"label": "cell"
 			}
 		],
 		"name": "trips"

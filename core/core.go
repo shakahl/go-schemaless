@@ -25,7 +25,7 @@ type Storage interface {
 	Put(ctx context.Context, tblName string, rowKey string, columnKey string, refKey int64, body string) (err error)
 
 	// FindPartition returns the partition number for a specific rowKey
-	FindPartition(rowKey string) int
+	FindPartition(tblName, rowKey string) int
 
 	// ResetConnection reinitializes the connection for the shard responsible for a key
 	ResetConnection(ctx context.Context, key string) error
@@ -153,7 +153,7 @@ func (kv *KVStore) Put(ctx context.Context, tblName, rowKey, columnKey string, r
 	return storage.Put(ctx, tblName, rowKey, columnKey, refKey, body)
 }
 
-func (kv *KVStore) FindPartition(rowKey string) (int, error) {
+func (kv *KVStore) FindPartition(tblName, rowKey string) (int, error) {
 
 	kv.mu.Lock()
 	defer kv.mu.Unlock()

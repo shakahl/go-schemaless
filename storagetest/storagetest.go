@@ -90,7 +90,7 @@ func StorageTest(t *testing.T, storage schemaless.Storage) {
 		t.Fatal("we have an obvious problem")
 	}
 
-	err = storage.ResetConnection(ctx, otherCellID)
+	err = storage.ResetConnection(ctx, tblName)
 	if err != nil {
 		t.Errorf("failed resetting connection for key: err=%v\n", err)
 	}

@@ -164,6 +164,8 @@ func (hs *HTTPAPI) loadShards() error {
 
 	hs.Stores = make(map[string]*schemaless.DataStore)
 
+	fmt.Println(hs.shardConfig)
+
 	for _, datastore := range hs.shardConfig.Datastores {
 		label := datastore.Name
 
@@ -175,7 +177,12 @@ func (hs *HTTPAPI) loadShards() error {
 			}
 
 			if _, ok := hs.Stores[datastore.Name]; !ok {
-				hs.Stores[datastore.Name] = schemaless.New().WithSource(shards).WithSourceName(label)
+				store, ok := hs.Stores[datastore.Name]
+				if !ok {
+					store = schemaless.New()
+				}
+				fmt.Printf("with sources name: %s datastore.Name %s\n", label, datastore.Name)
+				hs.Stores[datastore.Name] = store.WithSources(datastore.Name, shards).WithName(label, label)
 			}
 		default:
 			return fmt.Errorf("unrecognized driver: %s", driver)
@@ -198,10 +205,15 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 	var shards []core.Shard
 	nShards := len(datastore.Shards)
 
+	fmt.Printf("getSqliteShards datastore:%+v\n", datastore)
+
 	for i := 0; i < nShards; i++ {
+		shardTableName := datastore.Shards[i].Label
+
 		label := prefix + strconv.Itoa(i)
 		// NOTE: sqlite implementation supports only a single table per shard created at start time
-		st, err := st.New("cell", label)
+		fmt.Printf("getSqliteShards prefix:%s label:%s shardTableName:%s\n", prefix, label, shardTableName)
+		st, err := st.New(prefix, label)
 		if err != nil {
 			return nil, err
 		}
