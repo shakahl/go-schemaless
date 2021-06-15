@@ -19,6 +19,8 @@ GetLatest(ctx context.Context, tableName, rowKey, columnKey string) (cell models
 
 PartitionRead(ctx context.Context, tableName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error)
 
+FindPartition(tblName, rowKey string) (int, error) 
+
 Put(ctx context.Context, tableName, rowKey, columnKey string, refKey int64, jsonBody string) (err error)
 
 ResetConnection(ctx context.Context, key string) error
