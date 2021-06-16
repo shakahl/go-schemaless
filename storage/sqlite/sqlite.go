@@ -23,7 +23,7 @@ type Storage struct {
 const (
 	driver = "sqlite3"
 
-	createTableSQL      = "CREATE TABLE %s IF NOT EXISTS ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at INTEGER DEFAULT 0)"
+	createTableSQL      = "CREATE TABLE IF NOT EXISTS %s ( added_at INTEGER PRIMARY KEY AUTOINCREMENT, row_key VARCHAR(36) NOT NULL, column_name VARCHAR(64) NOT NULL, ref_key INTEGER NOT NULL, body TEXT, created_at INTEGER DEFAULT 0)"
 	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniq%s_idx ON %s ( row_key, column_name, ref_key )"
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
@@ -39,11 +39,11 @@ func exec(db *sql.DB, sqlStr string) error {
 	return nil
 }
 
-func createTable(ctx context.Context, db *sql.DB, tblName string) error {
+func CreateTable(ctx context.Context, db *sql.DB, tblName string) error {
 	return exec(db, fmt.Sprintf(createTableSQL, tblName))
 }
 
-func createIndex(ctx context.Context, db *sql.DB, tblName string) error {
+func CreateIndex(ctx context.Context, db *sql.DB, tblName string) error {
 	return exec(db, fmt.Sprintf(createIndexSQL, tblName, tblName))
 }
 
@@ -54,12 +54,12 @@ func New(tblName, path string) (*Storage, error) {
 		return nil, err
 	}
 
-	err = createTable(context.TODO(), db, tblName)
+	err = CreateTable(context.TODO(), db, tblName)
 	if err != nil {
 		return nil, err
 	}
 
-	err = createIndex(context.TODO(), db, tblName)
+	err = CreateIndex(context.TODO(), db, tblName)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +75,10 @@ func New(tblName, path string) (*Storage, error) {
 		store: db,
 		sugar: s,
 	}, nil
+}
+
+func (s *Storage) GetDB() *sql.DB {
+	return s.store
 }
 
 func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, refKey int64) (cell models.Cell, found bool, err error) {

@@ -35,7 +35,7 @@
 		"indexes":  [
 			{
 				"table": "cell",
-				"column_defs": {
+				"column_defs": [{
 					"column_key": "BASE",
 					"fields": [
 						{
@@ -52,7 +52,7 @@
 							"type": "datetime"
 						}
 					]
-				}
+				}]
 			}
 		],
 		"name": "trips"

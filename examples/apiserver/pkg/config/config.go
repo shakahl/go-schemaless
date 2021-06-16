@@ -35,9 +35,9 @@ type ShardConfig struct {
 }
 
 type DatastoreConfig struct {
-	Name   string  `json:"name"`
-	Shards []Shard `json:"shards"`
-	Indexes
+	Name    string  `json:"name"`
+	Shards  []Shard `json:"shards"`
+	Indexes []Index `json:"indexes"`
 }
 
 func LoadConfig(file string) (*ShardConfig, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -85,17 +86,17 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 	hs.l = l
 
 	if s.ShardConfigFile == "" {
-		panic("please set APP_SHARDCONFIGFILE")
+		log.Fatal("please set APP_SHARDCONFIGFILE")
 	}
 
 	hs.shardConfig, err = config.LoadConfig(s.ShardConfigFile)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	err = hs.loadShards()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	mux := chi.NewRouter()
@@ -164,8 +165,6 @@ func (hs *HTTPAPI) loadShards() error {
 
 	hs.Stores = make(map[string]*schemaless.DataStore)
 
-	fmt.Println(hs.shardConfig)
-
 	for _, datastore := range hs.shardConfig.Datastores {
 		label := datastore.Name
 
@@ -205,19 +204,51 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 	var shards []core.Shard
 	nShards := len(datastore.Shards)
 
-	fmt.Printf("getSqliteShards datastore:%+v\n", datastore)
-
+	// Iterate every shard
 	for i := 0; i < nShards; i++ {
 		shardTableName := datastore.Shards[i].Label
 
 		label := prefix + strconv.Itoa(i)
 		// NOTE: sqlite implementation supports only a single table per shard created at start time
 		fmt.Printf("getSqliteShards prefix:%s label:%s shardTableName:%s\n", prefix, label, shardTableName)
-		st, err := st.New(prefix, label)
+		store, err := st.New(prefix, label)
 		if err != nil {
 			return nil, err
 		}
-		shards = append(shards, core.Shard{Name: label, Backend: st})
+
+		// Create any necessary secondary index tables on each individual shard
+		for j := 0; j < len(datastore.Indexes); j++ {
+			indexList := datastore.Indexes[j]
+
+			for k := 0; k < len(indexList.ColumnDefs); k++ {
+				mainIndex := indexList.ColumnDefs[0]
+				extractColumn := mainIndex.ColumnKey
+				indexTableName := prefix + "_" + mainIndex.Fields[0].Field
+				fmt.Printf("CreateTable indexTableName:%s\n", indexTableName)
+
+				err := st.CreateTable(context.TODO(), store.GetDB(), indexTableName)
+				if err != nil {
+					return nil, err
+				}
+
+				err = st.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
+				if err != nil {
+					return nil, err
+				}
+
+				attributeName := mainIndex.Fields[0].Field
+
+				// Iterate the fields for a given column definition
+				for l := 1; l < len(mainIndex.Fields); l++ {
+					field := mainIndex.Fields[l].Field
+					fieldType := mainIndex.Fields[l].Type
+
+					fmt.Printf("!!! attributeName:%s field: %#v fieldType: %s extractColumn:%s\n", attributeName, field, fieldType, extractColumn)
+				}
+			}
+		}
+
+		shards = append(shards, core.Shard{Name: label, Backend: store})
 	}
 
 	return shards, nil
