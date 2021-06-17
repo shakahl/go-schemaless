@@ -15,19 +15,15 @@ type Shard struct {
 
 type Index struct {
 	Table      string      `json:"table"`
-	DataStore  string      `json:"datastore"`
-	ColumnDefs []ColumnDef `json:"column_defs"`
+	ColumnDefs map[string]*ColumnDef `json:"column_defs"`
 }
 
 type ColumnDef struct {
-	ColumnKey string  `json:"column_key"`
-	Fields    []Field `json:"fields"`
+	SourceField string  `json:"source_field"`
+	Fields    map[string]FieldType `json:"fields"`
 }
 
-type Field struct {
-	Field string `json:"field"`
-	Type  string `json:"type"`
-}
+type FieldType string
 
 type ShardConfig struct {
 	Driver     string            `json:"driver"`

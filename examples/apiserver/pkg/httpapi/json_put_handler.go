@@ -55,8 +55,6 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// TODO(rbastic): asynchronous background writing of secondary indexes?
-
 	respText, err := json.Marshal(resp)
 	if err != nil {
 		hs.writeError(hs.l, w, err)

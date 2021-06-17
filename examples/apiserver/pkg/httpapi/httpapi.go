@@ -204,7 +204,7 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 	var shards []core.Shard
 	nShards := len(datastore.Shards)
 
-	// Iterate every shard
+	// Iterate every shard (represented as a 'store')
 	for i := 0; i < nShards; i++ {
 		shardTableName := datastore.Shards[i].Label
 
@@ -218,33 +218,21 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 
 		// Create any necessary secondary index tables on each individual shard
 		for j := 0; j < len(datastore.Indexes); j++ {
-			indexList := datastore.Indexes[j]
+			for _, idx := range datastore.Indexes {
+				tableName := prefix + "_" + idx.Table
 
-			for k := 0; k < len(indexList.ColumnDefs); k++ {
-				mainIndex := indexList.ColumnDefs[0]
-				extractColumn := mainIndex.ColumnKey
-				indexTableName := prefix + "_" + mainIndex.Fields[0].Field
-				fmt.Printf("CreateTable indexTableName:%s\n", indexTableName)
+				fmt.Printf("!!! indexTableName: %s\n", tableName)
 
-				err := st.CreateTable(context.TODO(), store.GetDB(), indexTableName)
+				err := st.CreateTable(context.TODO(), store.GetDB(), tableName)
 				if err != nil {
 					return nil, err
 				}
 
-				err = st.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
+				err = st.CreateIndex(context.TODO(), store.GetDB(), tableName)
 				if err != nil {
 					return nil, err
 				}
 
-				attributeName := mainIndex.Fields[0].Field
-
-				// Iterate the fields for a given column definition
-				for l := 1; l < len(mainIndex.Fields); l++ {
-					field := mainIndex.Fields[l].Field
-					fieldType := mainIndex.Fields[l].Type
-
-					fmt.Printf("!!! attributeName:%s field: %#v fieldType: %s extractColumn:%s\n", attributeName, field, fieldType, extractColumn)
-				}
 			}
 		}
 

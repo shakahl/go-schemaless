@@ -16,7 +16,7 @@ import (
 const (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere?
 	storeName     = "trips"
-	tblName       = "trips"
+	tblName       = "cell"
 	baseCol       = "BASE"
 	otherCellID   = "hello"
 	testString    = "{\"value\": \"The shaved yak drank from the bitter well\"}"
@@ -106,7 +106,6 @@ func main() {
 	partNo := findPartResponse.PartitionNumber
 
 	var cells []models.Cell
-	fmt.Printf("partNo:%d\n", partNo)
 	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
 		panic(err)

@@ -35,24 +35,15 @@
 		"indexes":  [
 			{
 				"table": "cell",
-				"column_defs": [{
-					"column_key": "BASE",
-					"fields": [
-						{
-							"field": "driver_partner_uuid",
-							"type": "UUID"
-						},
-						{
-							"field": "city_uuid",
-							"type": "UUID"
-						},
-						{
-							
-							"field": "trip_created_at",
-							"type": "datetime"
+				"column_defs": {
+					"BASE": {
+						"source_field": "driver_partner_uuid",
+						"fields": {
+							"city_uuid":"UUID",
+							"trip_created_at":"datetime"
 						}
-					]
-				}]
+					}
+				}
 			}
 		],
 		"name": "trips"
