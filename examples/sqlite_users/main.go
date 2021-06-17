@@ -45,7 +45,7 @@ func main() {
 	kv := schemaless.New().WithSources("user", shards).WithName("user", "user")
 	defer kv.Destroy(context.TODO())
 
-	// We're going to demonstrate jump hash+metro hash with FS-backed SQLite
+	// We're going to demonstrate jump hash+metro hash with SQLite
 	// storage.  SQLite is just to make it easy to demonstrate that the data is
 	// being split. You can imagine each resulting SQLite file as a separate shard.
 

@@ -195,7 +195,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 	case "added_at":
 		locationColumn = "added_at"
 	default:
-		err = errors.New("Unrecognized location " + location)
+		err = errors.New("unrecognized location " + location)
 		return
 	}
 

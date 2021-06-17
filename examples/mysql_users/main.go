@@ -33,7 +33,6 @@ func newBackend(user, pass, host, port, schemaName string) *st.Storage {
 		panic(err)
 	}
 
-	// TODO(rbastic): defer Sync() on all backend storage loggers
 	return m
 }
 
@@ -85,7 +84,7 @@ func main() {
 	}
 
 	shards := getShards(user, pass, host, port, "user")
-	kv := schemaless.New().WithSource(shards)
+	kv := schemaless.New().WithSources("user", shards).WithName("user", "user")
 	defer kv.Destroy(context.TODO())
 
 	// We're going to demonstrate jump hash+metro hash with MySQL-backed
