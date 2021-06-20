@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -63,42 +64,52 @@ func main() {
 		startTime = s.StartTime
 	}
 
-	fmt.Printf("startTime: %d\n", startTime)
+	//fmt.Printf("startTime: %d\n", startTime)
 
 	ctx := context.TODO()
 
+	// otherCellID is a cell ID that intentionally doesn't exist
 	v, ok, err := cl.Get(ctx, storeName, tblName, otherCellID, baseCol, 1)
-	if err != nil {
+	if err != nil { // If Get() returns an error then that's wrong.
 		panic(err)
 	}
-	if ok {
+	if ok { // If we somehow find data for this key, that's also wrong.
 		panic(fmt.Sprintf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok))
 	}
 
+	// Insert some data
 	cellID := runPuts(cl)
 
-	time.Sleep(1 * time.Second)
-
+	// Get the record with a rowKey of cellID that has the largest refKey
 	v, ok, err = cl.GetLatest(ctx, storeName, tblName, cellID, baseCol)
 	if err != nil {
 		panic(err)
 	}
+	// If we find data that doesn't match testString3 for our largest refKey,
+	// that's a bug
 	if !ok || string(v.Body) != testString3 {
 		panic(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
 	}
 
+	// Try to get the first record inserted
 	v, ok, err = cl.Get(ctx, storeName, tblName, cellID, baseCol, 1)
 	if err != nil {
 		panic(err)
 	}
+	// Any data not matching testString is a bug
 	if !ok || string(v.Body) != testString {
 		panic(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
+	// For our next trick, we need to find the partition # that cellID was stored on.
+	// Remember, records are sharded by rowKey, so all records with a UUID of cellID
+	// are going to be on the same partition.
 	findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
+	// Check server-related errors
 	if err != nil {
 		panic(err)
 	}
+	// Check other potential database-related errors
 	if findPartResponse.Error != "" {
 		panic(findPartResponse.Error)
 	}
@@ -106,7 +117,11 @@ func main() {
 	partNo := findPartResponse.PartitionNumber
 
 	var cells []models.Cell
-	fmt.Printf("partNo:%d\n", partNo)
+//	fmt.Printf("partNo:%d\n", partNo)
+
+	// get data from the relevant partition that was written after we checked our startTime
+	// the query is written internally as timestamp > startTime, which is part of why we have
+	// a small 1-second sleep after our Put operations.
 	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
 		panic(err)
@@ -119,5 +134,10 @@ func main() {
 		panic("we have an obvious problem")
 	}
 
-	fmt.Printf("cells: %+v\n", cells)
+
+	marshaledCells, err := json.Marshal(cells)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s\n", marshaledCells)
 }
