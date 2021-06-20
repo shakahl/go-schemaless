@@ -13,14 +13,30 @@ type Shard struct {
 	Password string `json:"password"`
 }
 
+type Index struct {
+	Table      string       `json:"table"`
+	ColumnDefs []*ColumnDef `json:"column_defs"`
+}
+
+type IndexDataRecord struct {
+	SourceField string            `json:"source_field"`
+	Fields      map[string]string `json:"fields"`
+}
+
+type ColumnDef struct {
+	ColumnName string          `json:"column_name"`
+	IndexData  IndexDataRecord `json:"index_data"`
+}
+
 type ShardConfig struct {
 	Driver     string            `json:"driver"`
 	Datastores []DatastoreConfig `json:"datastores"`
 }
 
 type DatastoreConfig struct {
-	Name   string  `json:"name"`
-	Shards []Shard `json:"shards"`
+	Name    string  `json:"name"`
+	Shards  []Shard `json:"shards"`
+	Indexes []Index `json:"indexes"`
 }
 
 func LoadConfig(file string) (*ShardConfig, error) {

@@ -32,7 +32,7 @@ const (
 
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM %s WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s > ? LIMIT %d"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s >= ? LIMIT %d"
 	putCellSQL          = "INSERT INTO %s ( row_key, column_name, ref_key, body ) VALUES(?, ?, ?, ?)"
 )
 
@@ -179,6 +179,10 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 	}
 
 	return cell, found, nil
+}
+
+func (s *Storage) FindPartition(tblName, rowKey string) int {
+	panic("FindPartition not implemented at storage level")
 }
 
 func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNumber int, location string, value int64, limit int) (cells []models.Cell, found bool, err error) {

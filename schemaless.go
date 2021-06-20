@@ -87,6 +87,12 @@ func (ds *DataStore) getTable(tblName string) (*core.KVStore, error) {
 		return tbl, nil
 	}
 
+	// Return any core.KVStore if we haven't heard of the table yet (it
+	// could be an index table)
+	for _, tbl := range ds.sources {
+		return tbl, nil
+	}
+
 	return nil, fmt.Errorf("table %s does not exist\n", tblName)
 }
 

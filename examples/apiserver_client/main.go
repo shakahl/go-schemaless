@@ -4,46 +4,62 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/client"
 	"github.com/rbastic/go-schemaless/models"
+
+	"github.com/tidwall/sjson"
 )
 
 // see storagetest/storagetest.go - that code is mostly a copy of this.
 
-const (
+var (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere?
 	storeName     = "trips"
 	tblName       = "trips"
 	baseCol       = "BASE"
 	otherCellID   = "hello"
-	testString    = "{\"value\": \"The shaved yak drank from the bitter well\"}"
-	testString2   = "{\"value\": \"The printer is on fire\"}"
-	testString3   = "{\"value\": \"The appropriate printer-fire-response-team has been notified\"}"
+	testStrings   = []string{
+		"{\"value\": \"The shaved yak drank from the bitter well\"}",
+		"{\"value\": \"The printer is on fire\"}",
+		"{\"value\": \"The appropriate printer-fire-response-team has been notified\"}",
+	}
 )
 
-func runPuts(cl *client.Client) string {
+func runPuts(cl *client.Client) (string, string) {
 	cellID := uuid.New().String()
-	//cellID := "981a6b8c-629b-4d30-98c2-bc4816e7157a"
-	_, err := cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testString)
-	if err != nil {
-		panic(err)
+
+	var err error
+
+	driverPartnerUUID := uuid.New().String()
+
+	for idx := range testStrings {
+		testStrings[idx], err = sjson.Set(string(testStrings[idx]), "driver_partner_uuid", driverPartnerUUID)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testString2)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testStrings[0])
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testString3)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testStrings[1])
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	return cellID
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testStrings[2])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return cellID, driverPartnerUUID
 }
 
 type Specification struct {
@@ -54,7 +70,7 @@ func main() {
 	var s Specification
 	err := envconfig.Process("app", &s)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	cl := client.New().WithAddress("http://localhost:4444")
@@ -68,76 +84,97 @@ func main() {
 
 	ctx := context.TODO()
 
-	// otherCellID is a cell ID that intentionally doesn't exist
 	v, ok, err := cl.Get(ctx, storeName, tblName, otherCellID, baseCol, 1)
-	if err != nil { // If Get() returns an error then that's wrong.
-		panic(err)
+	if err != nil {
+		log.Fatal(err)
 	}
-	if ok { // If we somehow find data for this key, that's also wrong.
-		panic(fmt.Sprintf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok))
+	if ok {
+		log.Fatal(fmt.Sprintf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok))
 	}
 
-	// Insert some data
-	cellID := runPuts(cl)
+	cellID, driverPartnerUUID := runPuts(cl)
 
-	// Get the record with a rowKey of cellID that has the largest refKey
+	time.Sleep(1 * time.Second)
+
 	v, ok, err = cl.GetLatest(ctx, storeName, tblName, cellID, baseCol)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	// If we find data that doesn't match testString3 for our largest refKey,
-	// that's a bug
-	if !ok || string(v.Body) != testString3 {
-		panic(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
+	if !ok || string(v.Body) != testStrings[2] {
+		log.Fatal(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
 	}
 
-	// Try to get the first record inserted
 	v, ok, err = cl.Get(ctx, storeName, tblName, cellID, baseCol, 1)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	// Any data not matching testString is a bug
-	if !ok || string(v.Body) != testString {
-		panic(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
-	}
-
-	// For our next trick, we need to find the partition # that cellID was stored on.
-	// Remember, records are sharded by rowKey, so all records with a UUID of cellID
-	// are going to be on the same partition.
-	findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
-	// Check server-related errors
-	if err != nil {
-		panic(err)
-	}
-	// Check other potential database-related errors
-	if findPartResponse.Error != "" {
-		panic(findPartResponse.Error)
+	if !ok || string(v.Body) != testStrings[0] {
+		log.Fatal(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
-	partNo := findPartResponse.PartitionNumber
+	{
+		findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if findPartResponse.Error != "" {
+			log.Fatal(findPartResponse.Error)
+		}
 
-	var cells []models.Cell
-//	fmt.Printf("partNo:%d\n", partNo)
+		partNo := findPartResponse.PartitionNumber
 
-	// get data from the relevant partition that was written after we checked our startTime
-	// the query is written internally as timestamp > startTime, which is part of why we have
-	// a small 1-second sleep after our Put operations.
-	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
-	if err != nil {
-		panic(err)
+		var cells []models.Cell
+		cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 3)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !ok {
+			log.Fatal(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+		}
+
+		if len(cells) == 0 {
+			log.Fatal("we have an obvious problem")
+		}
+
+		resp, err := json.Marshal(cells)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s\n", resp)
 	}
-	if !ok {
-		panic(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+
+	// Check index partition
+	{
+		indexTableName := "trips_base_driver_partner_uuid"
+		findPartResponse, err := cl.FindPartition(storeName, indexTableName, driverPartnerUUID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if findPartResponse.Error != "" {
+			log.Fatal(findPartResponse.Error)
+		}
+
+		partNo := findPartResponse.PartitionNumber
+		//fmt.Printf("QUERYING partNo:%d startTime:%d\n", partNo, startTime)
+
+		var cells []models.Cell
+		cells, ok, err = cl.PartitionRead(ctx, storeName, indexTableName, partNo, "timestamp", startTime, 3)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !ok {
+			log.Fatal(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+		}
+
+		if len(cells) == 0 {
+			log.Fatal("we have an obvious problem")
+		}
+
+		resp, err := json.Marshal(cells)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s\n", resp)
 	}
 
-	if len(cells) == 0 {
-		panic("we have an obvious problem")
-	}
-
-
-	marshaledCells, err := json.Marshal(cells)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%s\n", marshaledCells)
 }

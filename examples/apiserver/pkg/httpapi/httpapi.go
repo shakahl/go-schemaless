@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -37,6 +39,12 @@ type Specification struct {
 	ShardConfigFile string
 }
 
+type AsyncIndex struct {
+	SourceField    string
+	IndexColumn    string
+	IndexTableName string
+}
+
 // HTTPAPI encapsulates everything we need to run a webserver.
 type HTTPAPI struct {
 	Address  string
@@ -49,6 +57,8 @@ type HTTPAPI struct {
 	Stores map[string]*schemaless.DataStore
 
 	shardConfig *config.ShardConfig
+
+	indexMap map[string]*AsyncIndex
 }
 
 // New requires a zap logger (see pkg/log, and/or
@@ -85,17 +95,19 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 	hs.l = l
 
 	if s.ShardConfigFile == "" {
-		panic("please set APP_SHARDCONFIGFILE")
+		log.Fatal("please set APP_SHARDCONFIGFILE")
 	}
+
+	hs.indexMap = make(map[string]*AsyncIndex)
 
 	hs.shardConfig, err = config.LoadConfig(s.ShardConfigFile)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	err = hs.loadShards()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	mux := chi.NewRouter()
@@ -164,8 +176,6 @@ func (hs *HTTPAPI) loadShards() error {
 
 	hs.Stores = make(map[string]*schemaless.DataStore)
 
-	fmt.Println(hs.shardConfig)
-
 	for _, datastore := range hs.shardConfig.Datastores {
 		label := datastore.Name
 
@@ -205,20 +215,48 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 	var shards []core.Shard
 	nShards := len(datastore.Shards)
 
-	fmt.Printf("getSqliteShards datastore:%+v\n", datastore)
-
+	// Iterate every shard (represented as a 'store')
 	for i := 0; i < nShards; i++ {
-		shardTableName := datastore.Shards[i].Label
-
 		label := prefix + strconv.Itoa(i)
-		// NOTE: sqlite implementation supports only a single table per shard created at start time
-		fmt.Printf("getSqliteShards prefix:%s label:%s shardTableName:%s\n", prefix, label, shardTableName)
-		st, err := st.New(prefix, label)
+
+		store, err := st.New(prefix, label)
 		if err != nil {
 			return nil, err
 		}
-		shards = append(shards, core.Shard{Name: label, Backend: st})
+
+		// Create any necessary secondary index tables on each individual shard
+		for j := 0; j < len(datastore.Indexes); j++ {
+			for _, idx := range datastore.Indexes {
+
+				sourceField := idx.ColumnDefs[0].IndexData.SourceField
+				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
+				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
+				indexKey := prefix + "_" + indexColumn
+
+				err := st.CreateTable(context.TODO(), store.GetDB(), indexTableName)
+				if err != nil {
+					return nil, err
+				}
+
+				err = st.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
+				if err != nil {
+					return nil, err
+				}
+
+				hs.registerIndex(indexKey, &AsyncIndex{
+					SourceField:    sourceField,
+					IndexColumn:    indexColumn,
+					IndexTableName: indexTableName,
+				})
+			}
+		}
+
+		shards = append(shards, core.Shard{Name: label, Backend: store})
 	}
 
 	return shards, nil
+}
+
+func (hs *HTTPAPI) registerIndex(key string, ai *AsyncIndex) {
+	hs.indexMap[key] = ai
 }
