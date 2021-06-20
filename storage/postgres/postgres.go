@@ -31,7 +31,7 @@ const (
 
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM %s WHERE row_key = $1 AND column_name = $2 AND ref_key = $3 LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = $1 AND column_name = $2 ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s > $1 LIMIT %d"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s >= $1 LIMIT %d"
 	putCellSQL          = "INSERT INTO %s ( row_key, column_name, ref_key, body) VALUES($1, $2, $3, $4)"
 )
 

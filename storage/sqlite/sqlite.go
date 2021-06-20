@@ -27,7 +27,7 @@ const (
 	createIndexSQL      = "CREATE UNIQUE INDEX IF NOT EXISTS uniq%s_idx ON %s ( row_key, column_name, ref_key )"
 	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? AND ref_key = ? LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = ? AND column_name = ? ORDER BY ref_key DESC LIMIT 1"
-	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s > ? LIMIT %d"
+	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s >= ? LIMIT %d"
 	putCellSQL          = "INSERT INTO %s ( row_key, column_name, ref_key, body, created_at ) VALUES(?, ?, ?, ?, ?)"
 )
 
@@ -194,6 +194,8 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		locationColumn = "created_at"
 	case "added_at":
 		locationColumn = "added_at"
+	case "ref_key":
+		locationColumn = "ref_key"
 	default:
 		err = errors.New("unrecognized location " + location)
 		return
@@ -237,7 +239,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 }
 
 func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error) {
-	createdAt := time.Now().UTC().UnixNano()
+	createdAt := time.Now().UTC().Unix()
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare(fmt.Sprintf(putCellSQL, tblName))
 	if err != nil {

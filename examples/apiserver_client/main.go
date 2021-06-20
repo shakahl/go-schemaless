@@ -30,12 +30,15 @@ var (
 	}
 )
 
-func runPuts(cl *client.Client) string {
+func runPuts(cl *client.Client) (string, string) {
 	cellID := uuid.New().String()
 
 	var err error
+
+	driverPartnerUUID := uuid.New().String()
+
 	for idx := range testStrings {
-		testStrings[idx], err = sjson.Set(string(testStrings[idx]), "driver_partner_uuid", uuid.New().String())
+		testStrings[idx], err = sjson.Set(string(testStrings[idx]), "driver_partner_uuid", driverPartnerUUID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -56,7 +59,7 @@ func runPuts(cl *client.Client) string {
 		log.Fatal(err)
 	}
 
-	return cellID
+	return cellID, driverPartnerUUID
 }
 
 type Specification struct {
@@ -72,7 +75,7 @@ func main() {
 
 	cl := client.New().WithAddress("http://localhost:4444")
 
-	startTime := time.Now().UTC().UnixNano()
+	startTime := time.Now().UTC().Unix()
 	if s.StartTime != 0 {
 		startTime = s.StartTime
 	}
@@ -89,7 +92,7 @@ func main() {
 		log.Fatal(fmt.Sprintf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok))
 	}
 
-	cellID := runPuts(cl)
+	cellID, driverPartnerUUID := runPuts(cl)
 
 	time.Sleep(1 * time.Second)
 
@@ -109,32 +112,68 @@ func main() {
 		log.Fatal(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
-	findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if findPartResponse.Error != "" {
-		log.Fatal(findPartResponse.Error)
+	{
+		findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if findPartResponse.Error != "" {
+			log.Fatal(findPartResponse.Error)
+		}
+
+		partNo := findPartResponse.PartitionNumber
+
+		var cells []models.Cell
+		cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 3)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !ok {
+			log.Fatal(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+		}
+
+		if len(cells) == 0 {
+			log.Fatal("we have an obvious problem")
+		}
+
+		resp, err := json.Marshal(cells)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s\n", resp)
 	}
 
-	partNo := findPartResponse.PartitionNumber
+	// Check index partition
+	{
+		findPartResponse, err := cl.FindPartition(storeName, "trips_base_driver_partner_uuid", driverPartnerUUID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if findPartResponse.Error != "" {
+			log.Fatal(findPartResponse.Error)
+		}
 
-	var cells []models.Cell
-	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if !ok {
-		log.Fatal(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+		partNo := findPartResponse.PartitionNumber
+
+		var cells []models.Cell
+		fmt.Printf("partNo:%d startTime:%d\n", partNo, startTime)
+		cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 3)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !ok {
+			log.Fatal(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+		}
+
+		if len(cells) == 0 {
+			log.Fatal("we have an obvious problem")
+		}
+
+		resp, err := json.Marshal(cells)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%s\n", resp)
 	}
 
-	if len(cells) == 0 {
-		log.Fatal("we have an obvious problem")
-	}
-
-	resp, err := json.Marshal(cells)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%s\n", resp)
 }

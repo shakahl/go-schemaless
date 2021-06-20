@@ -4,15 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"strings"
+
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
-	"strings"
 )
 
 var ErrMissingStore = errors.New("store not specified in request")
@@ -61,24 +63,27 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 
 		indexTableName, jsonIndexField, ok, err := hs.getIndexIfExists(request.Store, request.Table, request.ColumnKey)
 		if err != nil {
-			hs.l.Info("error getting index", zap.Error(err))
+			hs.l.Error("error getting index", zap.Error(err))
 			return
 		}
 		if ok {
 			go func() {
 				rowKey := gjson.Get(string(request.Body), jsonIndexField).String() // jsonIndexValue
 				if rowKey == "" {
-					hs.l.Info("error with async index write: driver_partner_uuid missing")
+					hs.l.Error("error with async index write: driver_partner_uuid missing")
 					return
 				}
 
-				refKey := time.Now().UTC().UnixNano()
+				time.Sleep(1 * time.Second)
+				refKey := time.Now().UTC().Unix()
 
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 				defer cancel()
+
+				fmt.Printf("wrote: %s %s %s %d %s\n", indexTableName, rowKey, jsonIndexField, refKey, request.Body)
 				err := store.Put(ctx, indexTableName, rowKey, jsonIndexField, refKey, request.Body)
 				if err != nil {
-					hs.l.Info("error with async index write: Put()", zap.Error(err))
+					hs.l.Error("error with async index write: Put()", zap.Error(err))
 					return
 				}
 
