@@ -42,7 +42,7 @@ func runPuts(t *testing.T, storage schemaless.Storage) string {
 
 // StorageTest is a simple sanity check for a schemaless Storage backend
 func StorageTest(t *testing.T, storage schemaless.Storage) {
-	startTime := time.Now().UTC().Unix()
+	startTime := time.Now().UTC().UnixNano()
 
 	time.Sleep(time.Second * 1)
 

@@ -239,7 +239,8 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 }
 
 func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error) {
-	createdAt := time.Now().UTC().Unix()
+	createdAt := time.Now().UTC().UnixNano()
+	//s.sugar.Infow("STORING", "createdAt", createdAt)
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare(fmt.Sprintf(putCellSQL, tblName))
 	if err != nil {

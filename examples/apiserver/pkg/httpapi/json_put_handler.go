@@ -70,18 +70,14 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				rowKey := gjson.Get(string(request.Body), jsonIndexField).String() // jsonIndexValue
 				if rowKey == "" {
-					hs.l.Error("error with async index write: driver_partner_uuid missing")
+					hs.l.Error(fmt.Sprintf("error with async index write: %s missing", jsonIndexField))
 					return
 				}
-
-				time.Sleep(1 * time.Second)
-				refKey := time.Now().UTC().Unix()
 
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 				defer cancel()
 
-				fmt.Printf("wrote: %s %s %s %d %s\n", indexTableName, rowKey, jsonIndexField, refKey, request.Body)
-				err := store.Put(ctx, indexTableName, rowKey, jsonIndexField, refKey, request.Body)
+				err := store.Put(ctx, indexTableName, rowKey, jsonIndexField, request.RefKey, request.Body)
 				if err != nil {
 					hs.l.Error("error with async index write: Put()", zap.Error(err))
 					return

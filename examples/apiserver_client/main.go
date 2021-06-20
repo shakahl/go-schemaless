@@ -75,7 +75,7 @@ func main() {
 
 	cl := client.New().WithAddress("http://localhost:4444")
 
-	startTime := time.Now().UTC().Unix()
+	startTime := time.Now().UTC().UnixNano()
 	if s.StartTime != 0 {
 		startTime = s.StartTime
 	}
@@ -145,7 +145,8 @@ func main() {
 
 	// Check index partition
 	{
-		findPartResponse, err := cl.FindPartition(storeName, "trips_base_driver_partner_uuid", driverPartnerUUID)
+		indexTableName := "trips_base_driver_partner_uuid"
+		findPartResponse, err := cl.FindPartition(storeName, indexTableName, driverPartnerUUID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -154,10 +155,10 @@ func main() {
 		}
 
 		partNo := findPartResponse.PartitionNumber
+		//fmt.Printf("QUERYING partNo:%d startTime:%d\n", partNo, startTime)
 
 		var cells []models.Cell
-		fmt.Printf("partNo:%d startTime:%d\n", partNo, startTime)
-		cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 3)
+		cells, ok, err = cl.PartitionRead(ctx, storeName, indexTableName, partNo, "timestamp", startTime, 3)
 		if err != nil {
 			log.Fatal(err)
 		}
