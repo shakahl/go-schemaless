@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,20 +27,19 @@ const (
 
 func runPuts(cl *client.Client) string {
 	cellID := uuid.New().String()
-	//cellID := "981a6b8c-629b-4d30-98c2-bc4816e7157a"
 	_, err := cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testString)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testString2)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testString3)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	return cellID
@@ -53,7 +53,7 @@ func main() {
 	var s Specification
 	err := envconfig.Process("app", &s)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	cl := client.New().WithAddress("http://localhost:4444")
@@ -69,10 +69,10 @@ func main() {
 
 	v, ok, err := cl.Get(ctx, storeName, tblName, otherCellID, baseCol, 1)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if ok {
-		panic(fmt.Sprintf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok))
+		log.Fatal(fmt.Sprintf("getting a non-existent key was 'ok': v=%v ok=%v\n", v, ok))
 	}
 
 	cellID := runPuts(cl)
@@ -81,26 +81,26 @@ func main() {
 
 	v, ok, err = cl.GetLatest(ctx, storeName, tblName, cellID, baseCol)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if !ok || string(v.Body) != testString3 {
-		panic(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
+		log.Fatal(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
 	}
 
 	v, ok, err = cl.Get(ctx, storeName, tblName, cellID, baseCol, 1)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if !ok || string(v.Body) != testString {
-		panic(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
+		log.Fatal(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
 	findPartResponse, err := cl.FindPartition(storeName, tblName, cellID)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if findPartResponse.Error != "" {
-		panic(findPartResponse.Error)
+		log.Fatal(findPartResponse.Error)
 	}
 
 	partNo := findPartResponse.PartitionNumber
@@ -108,14 +108,14 @@ func main() {
 	var cells []models.Cell
 	cells, ok, err = cl.PartitionRead(ctx, storeName, tblName, partNo, "timestamp", startTime, 5)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if !ok {
-		panic(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
+		log.Fatal(fmt.Sprintf("expected a slice of cells, response was: %+v", cells))
 	}
 
 	if len(cells) == 0 {
-		panic("we have an obvious problem")
+		log.Fatal("we have an obvious problem")
 	}
 
 	fmt.Printf("cells: %+v\n", cells)
