@@ -14,16 +14,19 @@ type Shard struct {
 }
 
 type Index struct {
-	Table      string      `json:"table"`
-	ColumnDefs map[string]*ColumnDef `json:"column_defs"`
+	Table      string       `json:"table"`
+	ColumnDefs []*ColumnDef `json:"column_defs"`
+}
+
+type IndexDataRecord struct {
+	SourceField string            `json:"source_field"`
+	Fields      map[string]string `json:"fields"`
 }
 
 type ColumnDef struct {
-	SourceField string  `json:"source_field"`
-	Fields    map[string]FieldType `json:"fields"`
+	ColumnName string          `json:"column_name"`
+	IndexData  IndexDataRecord `json:"index_data"`
 }
-
-type FieldType string
 
 type ShardConfig struct {
 	Driver     string            `json:"driver"`

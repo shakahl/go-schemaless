@@ -9,6 +9,10 @@ import (
 	"net/http"
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/tidwall/gjson"
+	"time"
+
+	"go.uber.org/zap"
 )
 
 var ErrMissingStore = errors.New("store not specified in request")
@@ -30,7 +34,8 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
+			hs.writeError(hs.l, w, err)
+			return
 		}
 	}
 
@@ -53,6 +58,31 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 			resp.Success = false
 			resp.Error = err.Error()
 		}
+	}
+
+	// You could have a more complicated secondary index writing procedure:
+	// * Something that tracks the goroutines and ties it into oklog/run
+	// * Completely config-driven implementation
+	// * A synchronous, transactionalized index writing version
+	// etc.
+	if request.Store == "trips" && request.Table == "trips" && request.ColumnKey == "BASE" {
+		go func() {
+			indexTable := "trips_base"
+			columnKey := "driver_partner_uuid"
+			rowKey := gjson.Get(string(request.Body), "driver_partner_uuid").String()
+			if rowKey == "" {
+				hs.l.Info("error with async index write: driver_partner_uuid missing")
+				return
+			}
+
+			refKey := time.Now().UTC().UnixNano()
+
+			err := store.Put(context.TODO(), indexTable, rowKey, columnKey, refKey, request.Body)
+			if err != nil {
+				hs.l.Info("error with async index write: Put()", zap.Error(err))
+				return
+			}
+		}()
 	}
 
 	respText, err := json.Marshal(resp)

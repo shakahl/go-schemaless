@@ -20,30 +20,32 @@
 	{
 		"shards": [
 			{
-				"label": "cell"
+				"label": "trips"
 			},
 			{
-				"label": "cell"
+				"label": "trips"
 			},
 			{
-				"label": "cell"
+				"label": "trips"
 			},
 			{
-				"label": "cell"
+				"label": "trips"
 			}
 		],
 		"indexes":  [
 			{
-				"table": "cell",
-				"column_defs": {
-					"BASE": {
+				"table": "trips",
+				"column_defs": [{
+					"column_name": "BASE",
+					"index_data": {
+						"@comments": "fields section not yet implemented?",
 						"source_field": "driver_partner_uuid",
 						"fields": {
 							"city_uuid":"UUID",
 							"trip_created_at":"datetime"
 						}
 					}
-				}
+				}]
 			}
 		],
 		"name": "trips"

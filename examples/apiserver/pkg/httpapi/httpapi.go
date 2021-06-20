@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -209,6 +210,7 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 		shardTableName := datastore.Shards[i].Label
 
 		label := prefix + strconv.Itoa(i)
+
 		// NOTE: sqlite implementation supports only a single table per shard created at start time
 		fmt.Printf("getSqliteShards prefix:%s label:%s shardTableName:%s\n", prefix, label, shardTableName)
 		store, err := st.New(prefix, label)
@@ -219,20 +221,19 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 		// Create any necessary secondary index tables on each individual shard
 		for j := 0; j < len(datastore.Indexes); j++ {
 			for _, idx := range datastore.Indexes {
-				tableName := prefix + "_" + idx.Table
 
-				fmt.Printf("!!! indexTableName: %s\n", tableName)
+				indexTableName := prefix + "_" + strings.ToLower(idx.ColumnDefs[0].ColumnName) + "_" + idx.ColumnDefs[0].IndexData.SourceField
 
-				err := st.CreateTable(context.TODO(), store.GetDB(), tableName)
+				fmt.Printf("!! getSqliteShards index table name: %s\n", indexTableName)
+				err := st.CreateTable(context.TODO(), store.GetDB(), indexTableName)
 				if err != nil {
 					return nil, err
 				}
 
-				err = st.CreateIndex(context.TODO(), store.GetDB(), tableName)
+				err = st.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
 				if err != nil {
 					return nil, err
 				}
-
 			}
 		}
 
