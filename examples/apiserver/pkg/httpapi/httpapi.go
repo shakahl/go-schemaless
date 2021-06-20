@@ -39,6 +39,12 @@ type Specification struct {
 	ShardConfigFile string
 }
 
+type AsyncIndex struct {
+	SourceField    string
+	IndexColumn    string
+	IndexTableName string
+}
+
 // HTTPAPI encapsulates everything we need to run a webserver.
 type HTTPAPI struct {
 	Address  string
@@ -51,6 +57,8 @@ type HTTPAPI struct {
 	Stores map[string]*schemaless.DataStore
 
 	shardConfig *config.ShardConfig
+
+	indexMap map[string]*AsyncIndex
 }
 
 // New requires a zap logger (see pkg/log, and/or
@@ -89,6 +97,8 @@ func New(l *zap.Logger) (*HTTPAPI, error) {
 	if s.ShardConfigFile == "" {
 		log.Fatal("please set APP_SHARDCONFIGFILE")
 	}
+
+	hs.indexMap = make(map[string]*AsyncIndex)
 
 	hs.shardConfig, err = config.LoadConfig(s.ShardConfigFile)
 	if err != nil {
@@ -207,12 +217,8 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 
 	// Iterate every shard (represented as a 'store')
 	for i := 0; i < nShards; i++ {
-		shardTableName := datastore.Shards[i].Label
-
 		label := prefix + strconv.Itoa(i)
 
-		// NOTE: sqlite implementation supports only a single table per shard created at start time
-		fmt.Printf("getSqliteShards prefix:%s label:%s shardTableName:%s\n", prefix, label, shardTableName)
 		store, err := st.New(prefix, label)
 		if err != nil {
 			return nil, err
@@ -222,9 +228,11 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 		for j := 0; j < len(datastore.Indexes); j++ {
 			for _, idx := range datastore.Indexes {
 
-				indexTableName := prefix + "_" + strings.ToLower(idx.ColumnDefs[0].ColumnName) + "_" + idx.ColumnDefs[0].IndexData.SourceField
+				sourceField := idx.ColumnDefs[0].IndexData.SourceField
+				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
+				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
+				indexKey := prefix + "_" + indexColumn
 
-				fmt.Printf("!! getSqliteShards index table name: %s\n", indexTableName)
 				err := st.CreateTable(context.TODO(), store.GetDB(), indexTableName)
 				if err != nil {
 					return nil, err
@@ -234,6 +242,12 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 				if err != nil {
 					return nil, err
 				}
+
+				hs.registerIndex(indexKey, &AsyncIndex{
+					SourceField:    sourceField,
+					IndexColumn:    indexColumn,
+					IndexTableName: indexTableName,
+				})
 			}
 		}
 
@@ -241,4 +255,8 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 	}
 
 	return shards, nil
+}
+
+func (hs *HTTPAPI) registerIndex(key string, ai *AsyncIndex) {
+	hs.indexMap[key] = ai
 }
