@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -10,34 +11,47 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/client"
 	"github.com/rbastic/go-schemaless/models"
+
+	"github.com/tidwall/sjson"
 )
 
 // see storagetest/storagetest.go - that code is mostly a copy of this.
 
-const (
+var (
 	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere?
 	storeName     = "trips"
 	tblName       = "trips"
 	baseCol       = "BASE"
 	otherCellID   = "hello"
-	testString    = "{\"value\": \"The shaved yak drank from the bitter well\"}"
-	testString2   = "{\"value\": \"The printer is on fire\"}"
-	testString3   = "{\"value\": \"The appropriate printer-fire-response-team has been notified\"}"
+	testStrings   = []string{
+		"{\"value\": \"The shaved yak drank from the bitter well\"}",
+		"{\"value\": \"The printer is on fire\"}",
+		"{\"value\": \"The appropriate printer-fire-response-team has been notified\"}",
+	}
 )
 
 func runPuts(cl *client.Client) string {
 	cellID := uuid.New().String()
-	_, err := cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testString)
+
+	var err error
+	for idx := range testStrings {
+		testStrings[idx], err = sjson.Set(string(testStrings[idx]), "driver_partner_uuid", uuid.New().String())
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testStrings[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testString2)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 2, testStrings[1])
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testString3)
+	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 3, testStrings[2])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,7 +77,7 @@ func main() {
 		startTime = s.StartTime
 	}
 
-	fmt.Printf("startTime: %d\n", startTime)
+	//fmt.Printf("startTime: %d\n", startTime)
 
 	ctx := context.TODO()
 
@@ -83,7 +97,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if !ok || string(v.Body) != testString3 {
+	if !ok || string(v.Body) != testStrings[2] {
 		log.Fatal(fmt.Sprintf("GetLatest failed getting a valid key: v='%s' ok=%v\n", string(v.Body), ok))
 	}
 
@@ -91,7 +105,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if !ok || string(v.Body) != testString {
+	if !ok || string(v.Body) != testStrings[0] {
 		log.Fatal(fmt.Sprintf("Get failed when retrieving an old value: body:%s ok=%v\n", string(v.Body), ok))
 	}
 
@@ -118,5 +132,9 @@ func main() {
 		log.Fatal("we have an obvious problem")
 	}
 
-	fmt.Printf("cells: %+v\n", cells)
+	resp, err := json.Marshal(cells)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n", resp)
 }

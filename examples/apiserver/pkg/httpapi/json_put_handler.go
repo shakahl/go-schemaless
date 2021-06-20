@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
 	"github.com/tidwall/gjson"
-	"time"
-
 	"go.uber.org/zap"
 )
 
@@ -58,17 +58,12 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 			resp.Success = false
 			resp.Error = err.Error()
 		}
-	}
 
-	// You could have a more complicated secondary index writing procedure:
-	// * Something that tracks the goroutines and ties it into oklog/run
-	// * Completely config-driven implementation
-	// * A synchronous, transactionalized index writing version
-	// etc.
-	if request.Store == "trips" && request.Table == "trips" && request.ColumnKey == "BASE" {
-		go func() {
-			indexTable := "trips_base"
-			columnKey := "driver_partner_uuid"
+		// Very basic async denormalized secondary index tables
+		if request.Store == "trips" && request.Table == "trips" && request.ColumnKey == "BASE" {
+			hs.l.Info("inside async put handler")
+			indexTable := "trips_base_driver_partner_uuid"
+			columnKey := "BASE"
 			rowKey := gjson.Get(string(request.Body), "driver_partner_uuid").String()
 			if rowKey == "" {
 				hs.l.Info("error with async index write: driver_partner_uuid missing")
@@ -77,14 +72,16 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 
 			refKey := time.Now().UTC().UnixNano()
 
-			err := store.Put(context.TODO(), indexTable, rowKey, columnKey, refKey, request.Body)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+			defer cancel()
+			fmt.Printf("store:%+v indexTable:%s rowKey:%s columnkey:%s refKey:%d body:%s\n", store, indexTable, rowKey, columnKey, refKey, request.Body)
+			err := store.Put(ctx, indexTable, rowKey, columnKey, refKey, request.Body)
 			if err != nil {
 				hs.l.Info("error with async index write: Put()", zap.Error(err))
 				return
 			}
-		}()
+		}
 	}
-
 	respText, err := json.Marshal(resp)
 	if err != nil {
 		hs.writeError(hs.l, w, err)
