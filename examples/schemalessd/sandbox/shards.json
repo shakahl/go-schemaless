@@ -1,0 +1,53 @@
+{
+	"driver": "sqlite3",
+	"datastores": [{
+		"shards": [
+			{
+				"label": "cell"
+			},
+			{
+				"label": "cell"
+			},
+			{
+				"label": "cell"
+			},
+			{
+				"label": "cell"
+			}
+		],
+		"name": "user"
+	},
+	{
+		"shards": [
+			{
+				"label": "trips"
+			},
+			{
+				"label": "trips"
+			},
+			{
+				"label": "trips"
+			},
+			{
+				"label": "trips"
+			}
+		],
+		"indexes":  [
+			{
+				"table": "trips",
+				"column_defs": [{
+					"column_name": "BASE",
+					"index_data": {
+						"@comments": "fields section not yet implemented?",
+						"source_field": "driver_partner_uuid",
+						"fields": {
+							"city_uuid":"UUID",
+							"trip_created_at":"datetime"
+						}
+					}
+				}]
+			}
+		],
+		"name": "trips"
+	}]
+}
