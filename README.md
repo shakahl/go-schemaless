@@ -85,5 +85,7 @@ To Damian Gryski for releasing https://github.com/dgryski/go-shardedkv
 To Uber Technologies for releasing numerous materials on the design and
 implementation of Mezzanine, their Schemaless store.
 
+To John Rinehart for NixOS support.
+
 And to many others :)
 
