@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/api"
 )
 
 func (hs *HTTPAPI) jsonFindPartitionHandler(w http.ResponseWriter, r *http.Request) {

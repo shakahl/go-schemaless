@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
+	"time"
 )
 
 // Storage is a MySQL-backed storage.
@@ -59,6 +60,9 @@ func (s *Storage) WithZap() error {
 }
 
 func (s *Storage) Open() error {
+	if s.sugar != nil {
+		s.sugar.Infof("Open dsnFormat:%s dsn:%s", dsnFormat, fmt.Sprintf(dsnFormat, s.user, s.pass, s.host, s.port, s.database) )
+	}
 	db, err := sql.Open(driver, fmt.Sprintf(dsnFormat, s.user, s.pass, s.host, s.port, s.database))
 	if err != nil {
 		return err
@@ -99,7 +103,7 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt int64
+		resCreatedAt time.Time
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
@@ -125,7 +129,7 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = resCreatedAt.UnixNano()
 		found = true
 	}
 
@@ -144,7 +148,7 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt int64
+		resCreatedAt time.Time
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetLatest", "query before", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey)
@@ -169,7 +173,7 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = resCreatedAt.UnixNano()
 		found = true
 	}
 
@@ -193,7 +197,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt int64
+		resCreatedAt time.Time
 
 		locationColumn string
 	)
@@ -234,7 +238,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = resCreatedAt.UnixNano()
 		cells = append(cells, cell)
 		found = true
 	}

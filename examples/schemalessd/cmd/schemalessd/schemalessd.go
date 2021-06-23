@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/httpapi"
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/log"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/httpapi"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/log"
 
 	"context"
 	"errors"
@@ -32,7 +32,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	logger.Info("Booting go-schemaless/examples/apiserver")
+	logger.Info("Booting schemalessd")
 	hs, err := httpapi.New(logger)
 	if err != nil {
 		logger.Error("couldn't create http server", zap.Error(err))

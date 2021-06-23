@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/api"
 
 	"io/ioutil"
 	"net/http"

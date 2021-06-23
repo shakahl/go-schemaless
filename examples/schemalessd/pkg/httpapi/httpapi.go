@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/go-chi/chi"
@@ -19,16 +20,17 @@ import (
 	"github.com/rbastic/go-schemaless"
 	"github.com/rbastic/go-schemaless/core"
 
-	loggerMiddleware "github.com/rbastic/go-schemaless/examples/apiserver/pkg/middleware/zap"
+	loggerMiddleware "github.com/rbastic/go-schemaless/examples/schemalessd/pkg/middleware/zap"
 
 	"net/http"
 
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/config"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/config"
 
 	"strconv"
 	"time"
 
-	st "github.com/rbastic/go-schemaless/storage/sqlite"
+	stmysql "github.com/rbastic/go-schemaless/storage/mysql"
+	stsqlite "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
 type Specification struct {
@@ -179,23 +181,31 @@ func (hs *HTTPAPI) loadShards() error {
 	for _, datastore := range hs.shardConfig.Datastores {
 		label := datastore.Name
 
+		var shards []core.Shard
+		var err error
 		switch driver {
-		case "sqlite3":
-			shards, err := hs.getSqliteShards(label, &datastore)
+		case "mysql":
+			shards, err = hs.getMysqlShards(label, &datastore)
 			if err != nil {
 				return err
 			}
-
-			if _, ok := hs.Stores[datastore.Name]; !ok {
-				store, ok := hs.Stores[datastore.Name]
-				if !ok {
-					store = schemaless.New()
-				}
-				fmt.Printf("with sources name: %s datastore.Name %s\n", label, datastore.Name)
-				hs.Stores[datastore.Name] = store.WithSources(datastore.Name, shards).WithName(label, label)
+		case "sqlite3":
+			shards, err = hs.getSqliteShards(label, &datastore)
+			if err != nil {
+				return err
 			}
 		default:
-			return fmt.Errorf("unrecognized driver: %s", driver)
+			return fmt.Errorf("unrecognized driver: '%s'", driver)
+
+		}
+
+		if _, ok := hs.Stores[datastore.Name]; !ok {
+			store, ok := hs.Stores[datastore.Name]
+			if !ok {
+				store = schemaless.New()
+			}
+			fmt.Printf("with sources name: %s datastore.Name %s\n", label, datastore.Name)
+			hs.Stores[datastore.Name] = store.WithSources(datastore.Name, shards).WithName(label, label)
 		}
 	}
 
@@ -211,7 +221,7 @@ func (hs *HTTPAPI) getStore(storeName string) (*schemaless.DataStore, error) {
 	return store, nil
 }
 
-func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
+func (hs *HTTPAPI) getMysqlShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
 	var shards []core.Shard
 	nShards := len(datastore.Shards)
 
@@ -219,7 +229,24 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 	for i := 0; i < nShards; i++ {
 		label := prefix + strconv.Itoa(i)
 
-		store, err := st.New(prefix, label)
+		host := datastore.Shards[i].Host
+		port := datastore.Shards[i].Port
+		user := datastore.Shards[i].Username
+		pass := datastore.Shards[i].Password
+		dbname := datastore.Shards[i].Database
+
+		store := stmysql.New().
+			WithHost(host).
+			WithPort(port).
+			WithUser(user).
+			WithPass(pass).
+			WithDatabase(dbname)
+
+		err := store.WithZap()
+		if err != nil {
+			return nil, err
+		}
+		err = store.Open()
 		if err != nil {
 			return nil, err
 		}
@@ -233,12 +260,48 @@ func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreCon
 				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
 				indexKey := prefix + "_" + indexColumn
 
-				err := st.CreateTable(context.TODO(), store.GetDB(), indexTableName)
+				hs.registerIndex(indexKey, &AsyncIndex{
+					SourceField:    sourceField,
+					IndexColumn:    indexColumn,
+					IndexTableName: indexTableName,
+				})
+			}
+		}
+
+		shards = append(shards, core.Shard{Name: label, Backend: store})
+	}
+
+	return shards, nil
+}
+
+func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
+	var shards []core.Shard
+	nShards := len(datastore.Shards)
+
+	// Iterate every shard (represented as a 'store')
+	for i := 0; i < nShards; i++ {
+		label := prefix + strconv.Itoa(i)
+
+		store, err := stsqlite.New(prefix, label)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create any necessary secondary index tables on each individual shard
+		for j := 0; j < len(datastore.Indexes); j++ {
+			for _, idx := range datastore.Indexes {
+
+				sourceField := idx.ColumnDefs[0].IndexData.SourceField
+				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
+				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
+				indexKey := prefix + "_" + indexColumn
+
+				err := stsqlite.CreateTable(context.TODO(), store.GetDB(), indexTableName)
 				if err != nil {
 					return nil, err
 				}
 
-				err = st.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
+				err = stsqlite.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
 				if err != nil {
 					return nil, err
 				}

@@ -12,7 +12,7 @@ import (
 
 	"strings"
 
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/api"
 	"github.com/tidwall/gjson"
 	"go.uber.org/zap"
 )

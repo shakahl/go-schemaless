@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/config"
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/httpapi"
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/log"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/config"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/httpapi"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/log"
 
 	git "gopkg.in/libgit2/git2go.v27"
 )

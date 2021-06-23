@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/api"
 
 	"encoding/json"
 	"fmt"

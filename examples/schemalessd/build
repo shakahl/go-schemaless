@@ -2,9 +2,10 @@
 set -eux
 rm -rf sandbox
 mkdir sandbox
-echo "building apiserver" && \
-cd cmd/apiserver && go build && \
+echo "building schemalessd" && \
+cd cmd/schemalessd && go build && \
 mkdir ../../sandbox/config && \
-cp apiserver ../../sandbox && \
+cp schemalessd ../../sandbox && \
 cd ../../ && \
+cp shards.json.mysql shards.json && \
 cp shards.json sandbox

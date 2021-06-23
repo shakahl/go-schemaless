@@ -3,8 +3,6 @@
 cd sandbox
 
 export APP_ADDRESS=:4444
-export APP_DRIVER=sqlite3
-export APP_DSN=file:test.db?cache=shared
 export APP_SHARDCONFIGFILE=shards.json
 
-./apiserver
+./schemalessd

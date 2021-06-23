@@ -1,6 +1,6 @@
-# go-schemaless/examples/apiserver
+# go-schemaless/examples/schemalessd
 
-go-schemaless/examples/apiserver is an API server for demonstrating the basic
+go-schemaless/examples/schemalessd is an API server for demonstrating the basic
 architecture and functionality of go-schemaless.
 
 # Installation
@@ -8,7 +8,7 @@ architecture and functionality of go-schemaless.
 Use ```go get``` to install it.
 
 ```bash
-go get github.com/rbastic/go-schemaless/examples/apiserver
+go get github.com/rbastic/go-schemaless/examples/schemalessd
 ```
 
 The above will error if you have not satisfied the required dependencies.
@@ -42,13 +42,13 @@ go install
 And then invoke it as follows:
 
 ```bash
-cd go/src/github.com/rbastic/go-schemaless/examples/apiserver
+cd go/src/github.com/rbastic/go-schemaless/examples/schemalessd
 ~/go/bin/golangci-lint run --exclude=vendor
 ```
 The code is also linted using golint with the following invocation:
 
 ```bash
-cd go/src/github.com/rbastic/go-schemaless/examples/apiserver
+cd go/src/github.com/rbastic/go-schemaless/examples/schemalessd
 golint ./...
 ```
 
@@ -61,20 +61,20 @@ and patterns stabilize.)
 One can test and run locally after running 'make build'.
 
 Running 'make build' produces a directory 'sandbox' suitable for creating a
-deployment tarball using a routine 'tar -czvf go-schemaless/examples/apiserver.tgz sandbox/' style of
+deployment tarball using a routine 'tar -czvf go-schemaless/examples/schemalessd.tgz sandbox/' style of
 command.
 
 Some shared libraries may need to be installed on target machines.
 
 # JSON Logging
 
-While the default 'console logger' employed by go-schemaless/examples/apiserver is nicer for developers,
+While the default 'console logger' employed by go-schemaless/examples/schemalessd is nicer for developers,
 it's not very useful for instrumentation or analytics.
 
 To enable JSON logging, run with:
 
 ```bash
-$ JSON=1 ./go-schemaless/examples/apiserver
+$ JSON=1 ./go-schemaless/examples/schemalessd
 ```
 
 Note that both stdout and stderr are employed for output regardless of whether
@@ -85,6 +85,6 @@ the json command-line flag is enabled.
 To test manually with the race detector enabled:
 
 ```bash
-CONFIG=cmd/go-schemaless/examples/apiserver/config.json go run -race cmd/go-schemaless/examples/apiserver/go-schemaless/examples/apiserver.go 
+CONFIG=cmd/go-schemaless/examples/schemalessd/config.json go run -race cmd/go-schemaless/examples/schemalessd/go-schemaless/examples/schemalessd.go 
 ```
 

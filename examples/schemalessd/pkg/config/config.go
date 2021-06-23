@@ -7,9 +7,10 @@ import (
 
 type Shard struct {
 	Label    string `json:"label"`
+	Database string `json:"database"`
 	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	Username string `json:"username"`
+	Port     string `json:"port"`
+	Username string `json:"user"`
 	Password string `json:"password"`
 }
 

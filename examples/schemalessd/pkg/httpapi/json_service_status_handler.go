@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
-	"github.com/rbastic/go-schemaless/examples/apiserver/pkg/api"
+	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/api"
 	"net/http"
 )
 
