@@ -9,7 +9,7 @@ docker exec schemaless_mariadb1 mariadb \
 	--host=127.0.0.1 \
 	--port=3306 \
 	--user=sltest \
-	--password=`cat /home/elysium/.mysql_password` \
+	--password=`cat $HOME/.mysql_password` \
 	trips \
 	-e "source /$SQL"
 
@@ -18,6 +18,6 @@ docker exec schemaless_mariadb2 mariadb \
 	--host=127.0.0.1 \
 	--port=3306 \
 	--user=sltest \
-	--password=`cat /home/elysium/.mysql_password` \
+	--password=`cat $HOME/.mysql_password` \
 	trips \
 	-e "source /$SQL"
