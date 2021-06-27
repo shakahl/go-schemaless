@@ -240,7 +240,6 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 
 func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, refKey int64, body string) (err error) {
 	createdAt := time.Now().UTC().UnixNano()
-	//s.sugar.Infow("STORING", "createdAt", createdAt)
 	var stmt *sql.Stmt
 	stmt, err = s.store.Prepare(fmt.Sprintf(putCellSQL, tblName))
 	if err != nil {
@@ -248,7 +247,6 @@ func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, re
 	}
 	var res sql.Result
 
-	//s.sugar.Infow("Put: wrote data", "RowKey", rowKey, "ColumnName", columnKey, "refKey", refKey, "Body", body, "createdAt", createdAt)
 
 	res, err = stmt.Exec(rowKey, columnKey, refKey, body, createdAt)
 	if err != nil {
@@ -262,7 +260,6 @@ func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, re
 	if rowCnt == 0 {
 		return errors.New("row-count was zero for put")
 	}
-	//s.sugar.Infof("ID = %s, affected = %d\n", rowKey, rowCnt)
 	return nil
 }
 

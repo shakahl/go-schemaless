@@ -7,5 +7,5 @@ cd cmd/schemalessd && go build && \
 mkdir ../../sandbox/config && \
 cp schemalessd ../../sandbox && \
 cd ../../ && \
-cp shards.json.pg shards.json && \
+cp shards.json.mysql shards.json && \
 cp shards.json sandbox

@@ -266,7 +266,9 @@ func (s *Storage) Put(ctx context.Context, tblName, rowKey, columnKey string, re
 	if err != nil {
 		return
 	}
-	s.sugar.Infof("affected = %d\n", rowCnt)
+	if rowCnt == 0 {
+		return errors.New("row-count was zero for put")
+	}
 	return
 }
 
