@@ -35,9 +35,9 @@ For learning or other:
 
 For more serious testing and usage:
 
-	* MySQL (fully functional)
+	* MySQL
 
-	* Postgres (small breakage, contributors desired)
+	* Postgres
 
 ## DISCLAIMER
 
@@ -85,6 +85,8 @@ To Uber Technologies for releasing numerous materials on the design and
 implementation of Mezzanine, their Schemaless store.
 
 To John Rinehart for NixOS support.
+
+To Simon Dassow for Postgres debugging and support.
 
 And to many others :)
 

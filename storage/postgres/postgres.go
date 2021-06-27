@@ -201,7 +201,8 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 	case "timestamp":
 		fallthrough
 	case "created_at":
-		locationColumn = "created_at"
+		locationColumn = "cast(extract(epoch from created_at)*1000000000 as bigint)"
+		value = value / 1000
 	case "added_at":
 		locationColumn = "added_at"
 	default:

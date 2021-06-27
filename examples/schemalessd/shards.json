@@ -1,35 +1,23 @@
 {
-	"driver": "sqlite3",
-	"datastores": [{
-		"shards": [
-			{
-				"label": "cell"
-			},
-			{
-				"label": "cell"
-			},
-			{
-				"label": "cell"
-			},
-			{
-				"label": "cell"
-			}
-		],
-		"name": "user"
-	},
+	"driver": "postgres",
+	"datastores": [
 	{
 		"shards": [
 			{
-				"label": "trips"
+				"database": "trips",
+				"label": "trips",
+				"host": "127.0.0.1",
+				"port": "15432",
+				"user": "postgres",
+				"password": "to0t33"
 			},
 			{
-				"label": "trips"
-			},
-			{
-				"label": "trips"
-			},
-			{
-				"label": "trips"
+				"database": "trips",
+				"label": "trips",
+				"host": "127.0.0.1",
+				"port": "15433",
+				"user": "postgres",
+				"password": "to0t33"
 			}
 		],
 		"indexes":  [
