@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -29,6 +30,7 @@ import (
 	"strconv"
 	"time"
 
+	stpostgres "github.com/rbastic/go-schemaless/storage/postgres"
 	stmysql "github.com/rbastic/go-schemaless/storage/mysql"
 	stsqlite "github.com/rbastic/go-schemaless/storage/sqlite"
 )
@@ -194,6 +196,11 @@ func (hs *HTTPAPI) loadShards() error {
 			if err != nil {
 				return err
 			}
+		case "postgres":
+			shards, err = hs.getPostgresShards(label, &datastore)
+			if err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unrecognized driver: '%s'", driver)
 
@@ -221,6 +228,58 @@ func (hs *HTTPAPI) getStore(storeName string) (*schemaless.DataStore, error) {
 	return store, nil
 }
 
+func (hs *HTTPAPI) getPostgresShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
+	var shards []core.Shard
+	nShards := len(datastore.Shards)
+
+	// Iterate every shard (represented as a 'store')
+	for i := 0; i < nShards; i++ {
+		label := prefix + strconv.Itoa(i)
+
+		host := datastore.Shards[i].Host
+		port := datastore.Shards[i].Port
+		user := datastore.Shards[i].Username
+		pass := datastore.Shards[i].Password
+		dbname := datastore.Shards[i].Database
+
+		store := stpostgres.New().
+			WithHost(host).
+			WithPort(port).
+			WithUser(user).
+			WithPass(pass).
+			WithDatabase(dbname)
+
+		err := store.WithZap()
+		if err != nil {
+			return nil, err
+		}
+		err = store.Open()
+		if err != nil {
+			return nil, err
+		}
+
+		// Create any necessary secondary index tables on each individual shard
+		for j := 0; j < len(datastore.Indexes); j++ {
+			for _, idx := range datastore.Indexes {
+
+				sourceField := idx.ColumnDefs[0].IndexData.SourceField
+				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
+				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
+				indexKey := prefix + "_" + indexColumn
+
+				hs.registerIndex(indexKey, &AsyncIndex{
+					SourceField:    sourceField,
+					IndexColumn:    indexColumn,
+					IndexTableName: indexTableName,
+				})
+			}
+		}
+
+		shards = append(shards, core.Shard{Name: label, Backend: store})
+	}
+
+	return shards, nil
+}
 func (hs *HTTPAPI) getMysqlShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
 	var shards []core.Shard
 	nShards := len(datastore.Shards)

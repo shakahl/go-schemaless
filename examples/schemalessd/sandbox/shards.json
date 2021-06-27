@@ -1,5 +1,5 @@
 {
-	"driver": "mysql",
+	"driver": "postgres",
 	"datastores": [
 	{
 		"shards": [
@@ -7,16 +7,16 @@
 				"database": "trips",
 				"label": "trips",
 				"host": "127.0.0.1",
-				"port": "13306",
-				"user": "sltest",
+				"port": "15432",
+				"user": "postgres",
 				"password": "to0t33"
 			},
 			{
 				"database": "trips",
 				"label": "trips",
 				"host": "127.0.0.1",
-				"port": "13307",
-				"user": "sltest",
+				"port": "15433",
+				"user": "postgres",
 				"password": "to0t33"
 			}
 		],

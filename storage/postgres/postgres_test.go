@@ -24,7 +24,7 @@ func TestPostgres(t *testing.T) {
 	port := os.Getenv("SQLPORT")
 	if port == "" {
 		t.Log("Defaulted to port 5432.")
-		port = "3306"
+		port = "5432"
 	} else {
 		t.Logf("Used port %s", port)
 	}

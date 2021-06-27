@@ -1,8 +1,7 @@
 This is an open-source, MIT-licensed implementation of Uber's Schemaless
-(immutable BigTable-style sharded MySQL/Postgres). Consider this as a potential
-learning grounds for your own scalable data storage APIs and infrastructure.
+(immutable BigTable-style sharded RDBMS). 
 
-This is only a pet project and not production ready in any capacity.
+This is only a learning project and not production ready.
 
 The github issues list describes what has been intentionally left unimplemented and
 what differences there are between this implementation and Uber's (based on the materials
@@ -36,9 +35,9 @@ For learning or other:
 
 For more serious testing and usage:
 
-	* MySQL
+	* MySQL (fully functional)
 
-	* Postgres
+	* Postgres (small breakage, contributors desired)
 
 ## DISCLAIMER
 

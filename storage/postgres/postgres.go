@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rbastic/go-schemaless/models"
 	"go.uber.org/zap"
+	"time"
 )
 
 // Storage is a Postgres-backed storage.
@@ -26,10 +27,9 @@ type Storage struct {
 const (
 	driver = "postgres"
 	// dsnFormat string parameters: username, password, host, port, database.
-
 	dsnFormat = "postgres://%s:%s@%s:%s/%s?sslmode=disable"
 
-	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body,created_at FROM %s WHERE row_key = $1 AND column_name = $2 AND ref_key = $3 LIMIT 1"
+	getCellSQL          = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = $1 AND column_name = $2 AND ref_key = $3 LIMIT 1"
 	getCellLatestSQL    = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE row_key = $1 AND column_name = $2 ORDER BY ref_key DESC LIMIT 1"
 	getCellsForShardSQL = "SELECT added_at, row_key, column_name, ref_key, body, created_at FROM %s WHERE %s >= $1 LIMIT %d"
 	putCellSQL          = "INSERT INTO %s ( row_key, column_name, ref_key, body) VALUES($1, $2, $3, $4)"
@@ -98,7 +98,7 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt int64
+		resCreatedAt time.Time
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("Get", "query", getCellSQL, "rowKey", rowKey, "columnKey", columnKey, "refKey", refKey)
@@ -124,7 +124,7 @@ func (s *Storage) Get(ctx context.Context, tblName, rowKey, columnKey string, re
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = resCreatedAt.UnixNano()
 		found = true
 	}
 
@@ -143,7 +143,7 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt int64
+		resCreatedAt time.Time
 		rows         *sql.Rows
 	)
 	s.sugar.Infow("GetLatest", "query before", getCellLatestSQL, "rowKey", rowKey, "columnKey", columnKey)
@@ -168,7 +168,7 @@ func (s *Storage) GetLatest(ctx context.Context, tblName, rowKey, columnKey stri
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = resCreatedAt.UnixNano()
 		found = true
 	}
 
@@ -192,7 +192,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		resColName   string
 		resRefKey    int64
 		resBody      string
-		resCreatedAt int64
+		resCreatedAt time.Time
 
 		locationColumn string
 	)
@@ -233,7 +233,7 @@ func (s *Storage) PartitionRead(ctx context.Context, tblName string, partitionNu
 		cell.ColumnName = resColName
 		cell.RefKey = resRefKey
 		cell.Body = resBody
-		cell.CreatedAt = resCreatedAt
+		cell.CreatedAt = resCreatedAt.UnixNano()
 		cells = append(cells, cell)
 		found = true
 	}

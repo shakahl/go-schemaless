@@ -60,9 +60,6 @@ func (s *Storage) WithZap() error {
 }
 
 func (s *Storage) Open() error {
-	if s.sugar != nil {
-		s.sugar.Infof("Open dsnFormat:%s dsn:%s", dsnFormat, fmt.Sprintf(dsnFormat, s.user, s.pass, s.host, s.port, s.database) )
-	}
 	db, err := sql.Open(driver, fmt.Sprintf(dsnFormat, s.user, s.pass, s.host, s.port, s.database))
 	if err != nil {
 		return err
