@@ -42,6 +42,18 @@ func runPuts(cl *client.Client) (string, string) {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		testStrings[idx], err = sjson.Set(string(testStrings[idx]), "city_uuid", uuid.New().String())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+
+		testStrings[idx], err = sjson.Set(string(testStrings[idx]), "trip_created_at", time.Now().UTC())
+		if err != nil {
+			log.Fatal(err)
+		}
+
 	}
 
 	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testStrings[0])

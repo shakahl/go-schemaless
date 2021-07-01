@@ -14,6 +14,7 @@ import (
 
 	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/api"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"go.uber.org/zap"
 )
 
@@ -61,12 +62,15 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 			resp.Error = err.Error()
 		}
 
-		indexTableName, jsonIndexField, ok, err := hs.getIndexIfExists(request.Store, request.Table, request.ColumnKey)
+		asyncIndex, err := hs.getIndexIfExists(request.Store, request.Table, request.ColumnKey)
 		if err != nil {
 			hs.l.Error("error getting index", zap.Error(err))
 			return
 		}
-		if ok {
+		if asyncIndex != nil {
+			indexTableName := asyncIndex.IndexTableName
+			jsonIndexField := asyncIndex.SourceField
+
 			go func() {
 				rowKey := gjson.Get(string(request.Body), jsonIndexField).String() // jsonIndexValue
 				if rowKey == "" {
@@ -77,7 +81,19 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 				defer cancel()
 
-				err := store.Put(ctx, indexTableName, rowKey, jsonIndexField, request.RefKey, request.Body)
+				// copy all index fields to body
+				var indexBody string
+				for _, f := range asyncIndex.Fields {
+					fval := gjson.Get(request.Body, f).String()
+
+					indexBody, err = sjson.Set(indexBody, f, fval)
+					if err != nil {
+						hs.l.Error("error with async indexing", zap.Error(err))
+						return
+					}
+				}
+
+				err := store.Put(ctx, indexTableName, rowKey, jsonIndexField, request.RefKey, indexBody)
 				if err != nil {
 					hs.l.Error("error with async index write: Put()", zap.Error(err))
 					return
@@ -102,13 +118,14 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (hs *HTTPAPI) getIndexIfExists(store, table, columnKey string) (string, string, bool, error) {
+func (hs *HTTPAPI) getIndexIfExists(store, table, columnKey string) (*AsyncIndex, error) {
 	indexKey := table + "_" + strings.ToLower(columnKey)
+
 	asyncIndex, ok := hs.indexMap[indexKey]
 
 	if ok {
-		return asyncIndex.IndexTableName, asyncIndex.SourceField, true, nil
+		return asyncIndex, nil
 	}
 
-	return "", "", false, nil
+	return nil, nil
 }

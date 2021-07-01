@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -30,8 +30,8 @@ import (
 	"strconv"
 	"time"
 
-	stpostgres "github.com/rbastic/go-schemaless/storage/postgres"
 	stmysql "github.com/rbastic/go-schemaless/storage/mysql"
+	stpostgres "github.com/rbastic/go-schemaless/storage/postgres"
 	stsqlite "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
@@ -47,6 +47,7 @@ type AsyncIndex struct {
 	SourceField    string
 	IndexColumn    string
 	IndexTableName string
+	Fields         []string
 }
 
 // HTTPAPI encapsulates everything we need to run a webserver.
@@ -262,15 +263,24 @@ func (hs *HTTPAPI) getPostgresShards(prefix string, datastore *config.DatastoreC
 		for j := 0; j < len(datastore.Indexes); j++ {
 			for _, idx := range datastore.Indexes {
 
-				sourceField := idx.ColumnDefs[0].IndexData.SourceField
+				idxData := idx.ColumnDefs[0].IndexData
+
+				sourceField := idxData.SourceField
 				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
 				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
 				indexKey := prefix + "_" + indexColumn
+
+				var fields []string
+
+				for k := range idxData.Fields {
+					fields = append(fields, k)
+				}
 
 				hs.registerIndex(indexKey, &AsyncIndex{
 					SourceField:    sourceField,
 					IndexColumn:    indexColumn,
 					IndexTableName: indexTableName,
+					Fields:         fields,
 				})
 			}
 		}
