@@ -93,7 +93,15 @@ func (hs *HTTPAPI) jsonPutHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				err := store.Put(ctx, indexTableName, rowKey, jsonIndexField, request.RefKey, indexBody)
+				// include parent row key
+				indexBody, err = sjson.Set(indexBody, "row_key", request.RowKey)
+				if err != nil {
+					hs.l.Error("error with async indexing", zap.Error(err))
+					return
+				}
+
+
+				err := store.Put(ctx, indexTableName, rowKey, request.ColumnKey, request.RefKey, indexBody)
 				if err != nil {
 					hs.l.Error("error with async index write: Put()", zap.Error(err))
 					return

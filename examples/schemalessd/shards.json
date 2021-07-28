@@ -26,7 +26,7 @@
 				"column_defs": [{
 					"column_name": "BASE",
 					"index_data": {
-						"@comments": "fields section not yet implemented?",
+						"@comments": "fields section not yet implemented for sqlite",
 						"source_field": "driver_partner_uuid",
 						"fields": {
 							"city_uuid":"UUID",

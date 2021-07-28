@@ -15,10 +15,8 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-// see storagetest/storagetest.go - that code is mostly a copy of this.
-
 var (
-	sqlDateFormat = "2006-01-02 15:04:05" // TODO: Hmm, should we make this a constant somewhere?
+	sqlDateFormat = "2006-01-02 15:04:05"
 	storeName     = "trips"
 	tblName       = "trips"
 	baseCol       = "BASE"
@@ -53,7 +51,6 @@ func runPuts(cl *client.Client) (string, string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 	}
 
 	_, err = cl.Put(context.TODO(), storeName, tblName, cellID, baseCol, 1, testStrings[0])
