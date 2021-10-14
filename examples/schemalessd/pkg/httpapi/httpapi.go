@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
@@ -27,12 +26,7 @@ import (
 
 	"github.com/rbastic/go-schemaless/examples/schemalessd/pkg/config"
 
-	"strconv"
 	"time"
-
-	stmysql "github.com/rbastic/go-schemaless/storage/mysql"
-	stpostgres "github.com/rbastic/go-schemaless/storage/postgres"
-	stsqlite "github.com/rbastic/go-schemaless/storage/sqlite"
 )
 
 type Specification struct {
@@ -227,174 +221,6 @@ func (hs *HTTPAPI) getStore(storeName string) (*schemaless.DataStore, error) {
 	}
 
 	return store, nil
-}
-
-func (hs *HTTPAPI) getPostgresShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
-	var shards []core.Shard
-	nShards := len(datastore.Shards)
-
-	// Iterate every shard (represented as a 'store')
-	for i := 0; i < nShards; i++ {
-		label := prefix + strconv.Itoa(i)
-
-		host := datastore.Shards[i].Host
-		port := datastore.Shards[i].Port
-		user := datastore.Shards[i].Username
-		pass := datastore.Shards[i].Password
-		dbname := datastore.Shards[i].Database
-
-		store := stpostgres.New().
-			WithHost(host).
-			WithPort(port).
-			WithUser(user).
-			WithPass(pass).
-			WithDatabase(dbname)
-
-		err := store.WithZap()
-		if err != nil {
-			return nil, err
-		}
-		err = store.Open()
-		if err != nil {
-			return nil, err
-		}
-
-		// Create any necessary secondary index tables on each individual shard
-		for j := 0; j < len(datastore.Indexes); j++ {
-			for _, idx := range datastore.Indexes {
-
-				idxData := idx.ColumnDefs[0].IndexData
-
-				sourceField := idxData.SourceField
-				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
-				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
-				indexKey := prefix + "_" + indexColumn
-
-				var fields []string
-
-				for k := range idxData.Fields {
-					fields = append(fields, k)
-				}
-
-				hs.registerIndex(indexKey, &AsyncIndex{
-					SourceField:    sourceField,
-					IndexColumn:    indexColumn,
-					IndexTableName: indexTableName,
-					Fields:         fields,
-				})
-			}
-		}
-
-		shards = append(shards, core.Shard{Name: label, Backend: store})
-	}
-
-	return shards, nil
-}
-func (hs *HTTPAPI) getMysqlShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
-	var shards []core.Shard
-	nShards := len(datastore.Shards)
-
-	// Iterate every shard (represented as a 'store')
-	for i := 0; i < nShards; i++ {
-		label := prefix + strconv.Itoa(i)
-
-		host := datastore.Shards[i].Host
-		port := datastore.Shards[i].Port
-		user := datastore.Shards[i].Username
-		pass := datastore.Shards[i].Password
-		dbname := datastore.Shards[i].Database
-
-		store := stmysql.New().
-			WithHost(host).
-			WithPort(port).
-			WithUser(user).
-			WithPass(pass).
-			WithDatabase(dbname)
-
-		err := store.WithZap()
-		if err != nil {
-			return nil, err
-		}
-		err = store.Open()
-		if err != nil {
-			return nil, err
-		}
-
-		// Create any necessary secondary index tables on each individual shard
-		for j := 0; j < len(datastore.Indexes); j++ {
-			for _, idx := range datastore.Indexes {
-
-				idxData := idx.ColumnDefs[0].IndexData
-
-				sourceField := idxData.SourceField
-				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
-				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
-				indexKey := prefix + "_" + indexColumn
-
-				var fields []string
-
-				for k := range idxData.Fields {
-					fields = append(fields, k)
-				}
-
-				hs.registerIndex(indexKey, &AsyncIndex{
-					SourceField:    sourceField,
-					IndexColumn:    indexColumn,
-					IndexTableName: indexTableName,
-					Fields:         fields,
-				})
-			}
-		}
-		shards = append(shards, core.Shard{Name: label, Backend: store})
-	}
-
-	return shards, nil
-}
-
-func (hs *HTTPAPI) getSqliteShards(prefix string, datastore *config.DatastoreConfig) ([]core.Shard, error) {
-	var shards []core.Shard
-	nShards := len(datastore.Shards)
-
-	// Iterate every shard (represented as a 'store')
-	for i := 0; i < nShards; i++ {
-		label := prefix + strconv.Itoa(i)
-
-		store, err := stsqlite.New(prefix, label)
-		if err != nil {
-			return nil, err
-		}
-
-		// Create any necessary secondary index tables on each individual shard
-		for j := 0; j < len(datastore.Indexes); j++ {
-			for _, idx := range datastore.Indexes {
-
-				sourceField := idx.ColumnDefs[0].IndexData.SourceField
-				indexColumn := strings.ToLower(idx.ColumnDefs[0].ColumnName)
-				indexTableName := prefix + "_" + indexColumn + "_" + sourceField
-				indexKey := prefix + "_" + indexColumn
-
-				err := stsqlite.CreateTable(context.TODO(), store.GetDB(), indexTableName)
-				if err != nil {
-					return nil, err
-				}
-
-				err = stsqlite.CreateIndex(context.TODO(), store.GetDB(), indexTableName)
-				if err != nil {
-					return nil, err
-				}
-
-				hs.registerIndex(indexKey, &AsyncIndex{
-					SourceField:    sourceField,
-					IndexColumn:    indexColumn,
-					IndexTableName: indexTableName,
-				})
-			}
-		}
-
-		shards = append(shards, core.Shard{Name: label, Backend: store})
-	}
-
-	return shards, nil
 }
 
 func (hs *HTTPAPI) registerIndex(key string, ai *AsyncIndex) {
